@@ -1,32 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WNBA 2025 Season Schedule from Wikipedia 2.0</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
-  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-  th, td { border: 1px solid #444; padding: 8px; text-align: left; }
-  th { background: #4CAF50; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WNBA 2025 Season Schedule (Wikipedia)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 20px;
+      margin: 0;
+      min-height: 100vh;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: #181818;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #4CAF50;
+      color: #fff;
+    }
+    tr:nth-child(even) {
+      background: #222;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    .error {
+      color: #ff6c6c;
+    }
+  </style>
 </head>
 <body>
-  <h1>WNBA 2025 Season Schedule (Wikipedia) 2.0</h1>
-  <p id="status">Loading schedule...</p>
+  <h1>WNBA 2025 Season Schedule (from Wikipedia)</h1>
+  <div id="status">Loading schedule...</div>
   <table id="schedule-table" style="display:none;">
     <thead>
       <tr><th>Date</th><th>Time (ET)</th><th>Matchup</th></tr>
     </thead>
     <tbody></tbody>
   </table>
-
 <script>
 async function fetchScheduleFromWikipedia() {
   const proxy = 'https://api.allorigins.win/raw?url=';
   const wikiURL = 'https://en.wikipedia.org/wiki/2025_WNBA_season';
+  const statusDiv = document.getElementById('status');
+  const table = document.getElementById('schedule-table');
+  const tbody = table.querySelector('tbody');
 
   try {
+    statusDiv.textContent = 'Loading schedule...';
     const response = await fetch(proxy + encodeURIComponent(wikiURL));
     if (!response.ok) throw new Error('Failed to fetch Wikipedia page.');
 
@@ -34,42 +69,45 @@ async function fetchScheduleFromWikipedia() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
 
-    const tables = [...doc.querySelectorAll('table.wikitable')];
+    // Look for the correct table
+    const tables = Array.from(doc.querySelectorAll('table.wikitable'));
     let scheduleTable = null;
-
-    for (const table of tables) {
-      const headers = [...table.querySelectorAll('th')].map(th => th.innerText.trim().toLowerCase());
-      if (headers.includes('date') && headers.includes('time') && headers.some(h => h.includes('matchup') || h.includes('opponent'))) {
-        scheduleTable = table;
+    for (const t of tables) {
+      const headers = Array.from(t.querySelectorAll('th')).map(th => th.textContent.trim().toLowerCase());
+      if (
+        headers.some(h => h.includes('date')) &&
+        (headers.some(h => h.includes('time')) || headers.some(h => h.includes('et'))) &&
+        (headers.some(h => h.includes('matchup')) || headers.some(h => h.includes('opponent')))
+      ) {
+        scheduleTable = t;
         break;
       }
     }
+    if (!scheduleTable) throw new Error('Schedule table not found. Wikipedia may have changed its format.');
 
-    if (!scheduleTable) throw new Error('Schedule table not found.');
-
-    const tbody = document.querySelector('#schedule-table tbody');
+    // Parse rows
     tbody.innerHTML = '';
-
-    const rows = [...scheduleTable.querySelectorAll('tr')].slice(1);
-
-    rows.forEach(row => {
+    const rows = Array.from(scheduleTable.querySelectorAll('tr')).slice(1);
+    let rowCount = 0;
+    for (const row of rows) {
       const cells = row.querySelectorAll('td');
-      if (cells.length < 3) return;
-
-      const date = cells[0].innerText.trim();
-      const time = cells[1].innerText.trim();
-      const matchup = cells[2].innerText.trim();
-
+      if (cells.length < 3) continue;
+      const date = cells[0].textContent.trim();
+      const time = cells[1].textContent.trim();
+      const matchup = cells[2].textContent.trim();
+      if (!date || !time || !matchup) continue;
       const tr = document.createElement('tr');
       tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${matchup}</td>`;
       tbody.appendChild(tr);
-    });
-
-    document.getElementById('status').style.display = 'none';
-    document.getElementById('schedule-table').style.display = 'table';
-
+      rowCount++;
+    }
+    if (rowCount === 0) throw new Error('Schedule table is present but has no rows. Wikipedia may have changed.');
+    statusDiv.style.display = 'none';
+    table.style.display = 'table';
   } catch (error) {
-    document.getElementById('status').innerText = 'Error loading schedule: ' + error.message;
+    statusDiv.innerHTML = `<span class="error">Error loading schedule: ${error.message}</span>`;
+    table.style.display = 'none';
+    console.error(error);
   }
 }
 
