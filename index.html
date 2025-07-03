@@ -44,7 +44,7 @@
   </style>
 </head>
 <body>
-  <h1>WNBA 2025 Season Schedule (from Wikipedia) 3.0</h1>
+  <h1>WNBA 2025 Season Schedule (from Wikipedia) 4.0</h1>
   <div id="status">Loading schedule...</div>
   <table id="schedule-table" style="display:none;">
     <thead>
@@ -69,39 +69,56 @@ async function fetchScheduleFromWikipedia() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
 
-    // Look for the correct table
+    // Find the regular season table (adjust this if the structure changes)
     const tables = Array.from(doc.querySelectorAll('table.wikitable'));
     let scheduleTable = null;
     for (const t of tables) {
       const headers = Array.from(t.querySelectorAll('th')).map(th => th.textContent.trim().toLowerCase());
-      if (
-        headers.some(h => h.includes('date')) &&
-        (headers.some(h => h.includes('time')) || headers.some(h => h.includes('et'))) &&
-        (headers.some(h => h.includes('matchup')) || headers.some(h => h.includes('opponent')))
-      ) {
+      if (headers.includes('date') && headers.includes('time (et)') && headers.includes('matchup')) {
         scheduleTable = t;
         break;
       }
     }
-    if (!scheduleTable) throw new Error('Schedule table not found. Wikipedia may have changed its format.');
+    if (!scheduleTable) throw new Error('Schedule table not found.');
 
-    // Parse rows
+    // Parse table rows
     tbody.innerHTML = '';
-    const rows = Array.from(scheduleTable.querySelectorAll('tr')).slice(1);
-    let rowCount = 0;
-    for (const row of rows) {
-      const cells = row.querySelectorAll('td');
-      if (cells.length < 3) continue;
-      const date = cells[0].textContent.trim();
-      const time = cells[1].textContent.trim();
-      const matchup = cells[2].textContent.trim();
-      if (!date || !time || !matchup) continue;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${matchup}</td>`;
-      tbody.appendChild(tr);
-      rowCount++;
-    }
-    if (rowCount === 0) throw new Error('Schedule table is present but has no rows. Wikipedia may have changed.');
+    let lastDate = '';
+    Array.from(scheduleTable.querySelectorAll('tr')).slice(1).forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      if (cells.length < 3) return;
+
+      // Date logic
+      let date = cells[0].textContent.trim();
+      if (date) lastDate = date;
+      else date = lastDate;
+
+      // Some rows have multiple games per date, with time & matchup but no date.
+      let time = cells[1].textContent.trim();
+      let matchup = cells[2].textContent.trim();
+
+      // Some rows may have matchups split across 2-3 cells with "@" in the middle
+      // e.g. [Chicago] [@] [Minnesota] => Chicago @ Minnesota
+      if (matchup === '@' && cells[1].textContent.trim() && cells[3]) {
+        matchup = `${cells[1].textContent.trim()} @ ${cells[3].textContent.trim()}`;
+        time = ''; // No time in this pattern
+      } else if (cells.length >= 4 && cells[3].textContent.trim() === '@') {
+        // e.g. [Chicago] [@] [Minnesota] in cells 2,3,4
+        matchup = `${cells[2].textContent.trim()} @ ${cells[4].textContent.trim()}`;
+        time = cells[1].textContent.trim();
+      } else if (cells.length >= 4 && cells[3].textContent.trim() && cells[2].textContent.trim() === '@') {
+        matchup = `${cells[1].textContent.trim()} @ ${cells[3].textContent.trim()}`;
+        time = '';
+      }
+
+      // Only output if we have at least date, and matchup or time
+      if (date && (time || matchup)) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${matchup}</td>`;
+        tbody.appendChild(tr);
+      }
+    });
+
     statusDiv.style.display = 'none';
     table.style.display = 'table';
   } catch (error) {
