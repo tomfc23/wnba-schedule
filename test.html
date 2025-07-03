@@ -270,25 +270,18 @@
       return eventName;
     }
 
-    // --- Helper for EST to PST conversion ---
+    // --- Helper for EST to PST conversion (returns just "h:mm" string) ---
     function estToPst(timeStr) {
       if (!timeStr || timeStr === "??") return "??";
-      const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})([ap]?)$/i);
+      const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})$/);
       if (!match) return timeStr;
       let hour = +match[1];
       let minute = +match[2];
-      let isAM = timeStr.toLowerCase().includes('a');
-      let isPM = timeStr.toLowerCase().includes('p');
-      if (!isAM && !isPM) { // fallback, guess from hour
-        isAM = hour < 12;
-      }
-      if (isPM && hour < 12) hour += 12;
-      if (isAM && hour === 12) hour = 0;
       hour -= 3;
       if (hour < 0) hour += 24;
-      let period = hour < 12 ? 'a' : 'p';
+      // Convert to 12-hour, drop am/pm, show as "h:mm"
       let pstHour = hour % 12 || 12;
-      return `${pstHour}:${minute.toString().padStart(2, '0')}${period}`;
+      return `${pstHour}:${minute.toString().padStart(2, '0')}`;
     }
 
     // --- Show Schedule with PST option ---
@@ -323,18 +316,31 @@
       const mlbTime = getEarliestTime(mlbForDay);
       const wnbaTime = getEarliestTime(wnbaForDay);
 
-      // --- Short Summary Section ---
+      // --- Short Summary Section: Only show sports with at least 1 game, show time as "h:mm" ---
       let summary = `Games on ${selectedDate.toLocaleDateString("en-US", {
         weekday: "long", month: "numeric", day: "numeric"
       })}:\n———————————————\n`;
-      summary += `${mlbForDay.length} MLB${mlbTime ? ` (${formatTimeDisplay(mlbTime, showPST)})` : ''}\n`;
-      summary += `${wnbaForDay.length} WNBA${wnbaTime ? ` (${formatTimeDisplay(wnbaTime, showPST)})` : ''}\n`;
-      if (golfForDay.length > 0) summary += `${golfForDay.length} Golf\n`;
-      if (ufcForDay.length > 0) summary += `${ufcForDay.length} UFC\n`;
-      summary += `———————————————\n${mlbForDay.length + wnbaForDay.length + golfForDay.length + ufcForDay.length} total games\n———————————————`;
+      let total = 0;
+      if (mlbForDay.length > 0) {
+        summary += `${mlbForDay.length} MLB${mlbTime ? ` (${formatTimeDisplay(mlbTime, showPST)})` : ''}\n`;
+        total += mlbForDay.length;
+      }
+      if (wnbaForDay.length > 0) {
+        summary += `${wnbaForDay.length} WNBA${wnbaTime ? ` (${formatTimeDisplay(wnbaTime, showPST)})` : ''}\n`;
+        total += wnbaForDay.length;
+      }
+      if (golfForDay.length > 0) {
+        summary += `${golfForDay.length} Golf\n`;
+        total += golfForDay.length;
+      }
+      if (ufcForDay.length > 0) {
+        summary += `${ufcForDay.length} UFC\n`;
+        total += ufcForDay.length;
+      }
+      summary += `———————————————\n${total} total games\n———————————————`;
 
-      // --- Full Breakdown Section (unchanged) ---
-      let fullBreakdown = "Full Breakdown: (est)\n";
+      // --- Full Breakdown Section (only "h:mm" times, no AM/PM, no 24h) ---
+      let fullBreakdown = "Full Breakdown:\n";
       if (golfForDay.length > 0) {
         golfForDay.forEach(g => {
           fullBreakdown += `Golf - ${abbreviateGolfEvent(g.event)}\n`;
@@ -391,7 +397,7 @@
       status.style.display = "none";
     }
 
-    // Helper for summary time formatting (PST/EST)
+    // Helper for summary time formatting (PST/EST) always as "h:mm"
     function formatTimeDisplay(timeStr, showPST) {
       const est = formatTimeForBreakdown(timeStr);
       if (!showPST) return est;
@@ -399,7 +405,7 @@
       return `${pst}/${est}`;
     }
 
-    // --- Keep your utility functions as before (abbreviated for brevity) ---
+    // --- Utility functions ---
     function copyToClipboard(elementId) {
       const text = document.getElementById(elementId).innerText;
       navigator.clipboard.writeText(text).then(() => {
@@ -434,31 +440,32 @@
     }
     function parseTime(str) {
       if (!str) return null;
-      const match = str.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])$/);
+      // Accepts "1:00 PM", "7:05AM", "7:05", etc. Returns Date obj at 0/0/0 h/m
+      let match = str.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])?$/);
       if (!match) return null;
       let h = Number(match[1]);
       const m = Number(match[2]);
-      const period = match[3].toUpperCase();
+      const period = match[3] ? match[3].toUpperCase() : null;
       if (period === "PM" && h < 12) h += 12;
       if (period === "AM" && h === 12) h = 0;
       return new Date(0, 0, 0, h, m);
     }
+    // Shows only "h:mm" (12-hour, no AM/PM)
     function formatTimeForBreakdown(timeStr) {
       if (!timeStr || timeStr === "??") return "??";
       const timeObj = parseTime(timeStr);
       if (!timeObj) return timeStr;
-      const h = timeObj.getHours();
-      const m = timeObj.getMinutes();
-      if (h === 0 && m === 0) return "12:00a";
-      if (h < 12) return h === 0 ? `12:${m.toString().padStart(2, '0')}a` : `${h}:${m.toString().padStart(2, '0')}a`;
-      else return h === 12 ? `12:${m.toString().padStart(2, '0')}` : `${h - 12}:${m.toString().padStart(2, '0')}`;
+      let hours = timeObj.getHours();
+      let mins = timeObj.getMinutes();
+      let hour12 = hours % 12 || 12;
+      return `${hour12}:${mins.toString().padStart(2, '0')}`;
     }
+    // Used for finding earliest time (returns as "h:mm")
     function formatTime(date) {
-      const h = date.getHours();
-      const m = date.getMinutes().toString().padStart(2, '0');
-      const suffix = h < 12 ? 'AM' : 'PM';
-      const displayH = h % 12 || 12;
-      return `${displayH}:${m} ${suffix}`;
+      let h = date.getHours();
+      let m = date.getMinutes().toString().padStart(2, '0');
+      let hour12 = h % 12 || 12;
+      return `${hour12}:${m}`;
     }
 
     // Re-render on PST toggle
