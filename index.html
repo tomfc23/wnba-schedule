@@ -65,23 +65,23 @@
             }
         });
 
-        // Fixed column detection - Papa Parse renames duplicate headers
+        // Updated column detection for new header names
         function detectColumns(row) {
             const keys = Object.keys(row);
             console.log("All column keys:", keys); // Debug log
             
-            // MLB columns (original names)
+            // MLB columns (updated names)
             columns.mlb = {
-                date: "Date",
-                time: "Time", 
-                matchup: "Matchup"
+                date: "MLB Date",
+                time: "MLB Time", 
+                matchup: "MLB Matchup"
             };
             
-            // WNBA columns (Papa Parse adds __1 suffix for duplicates)
+            // WNBA columns (updated names)
             columns.wnba = {
-                date: "Date__1",
-                time: "Time__1",
-                matchup: "Matchup__1"
+                date: "WNBA Date",
+                time: "WNBA Time",
+                matchup: "WNBA Matchup"
             };
         }
 
