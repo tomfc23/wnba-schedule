@@ -72,7 +72,7 @@
   </style>
 </head>
 <body>
-  <h1>MLB & WNBA Schedule Viewer 4.20</h1>
+  <h1>MLB & WNBA Schedule Viewer 4.1</h1>
 
   <div>
     <input type="date" id="datePicker" />
@@ -173,16 +173,11 @@
       const wnbaTime = getEarliestTime(wnbaForDay);
 
       // Create summary
-      const dateStr = `${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`;
-      const dayName = selectedDate.toLocaleDateString("en-US", { weekday: "long" });
-      
-      let summary = `Games on ${dayName} ${dateStr}:\n———————————————\n`;
-      
-      // Add JDC RD 1 placeholder for now
-      summary += `JDC RD 1 (4:45A/7:45A)\n`;
-      
-      summary += `${mlbForDay.length} MLB ${mlbTime ? `(${formatDualTime(mlbTime)})` : ''}\n`;
-      summary += `${wnbaForDay.length} WNBA ${wnbaTime ? `(${formatDualTime(wnbaTime)})` : ''}\n`;
+      let summary = `Games on ${selectedDate.toLocaleDateString("en-US", {
+        weekday: "long", month: "long", day: "numeric", year: "numeric"
+      })}:\n———————————————\n`;
+      summary += `${mlbForDay.length} MLB ${mlbTime ? `(${mlbTime})` : ''}\n`;
+      summary += `${wnbaForDay.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}\n`;
       summary += `———————————————\n${mlbForDay.length + wnbaForDay.length} total games\n———————————————`;
 
       // Create full breakdown
@@ -274,37 +269,7 @@
       }
     }
 
-    function formatDualTime(timeStr) {
-      if (!timeStr) return '';
-      
-      const timeObj = parseTime(timeStr);
-      if (!timeObj) return timeStr;
-      
-      const estHours = timeObj.getHours();
-      const minutes = timeObj.getMinutes();
-      
-      // Calculate PST (3 hours behind EST)
-      let pstHours = estHours - 3;
-      if (pstHours < 0) pstHours += 24;
-      
-      // Format both times
-      const pstTime = formatShortTime(pstHours, minutes);
-      const estTime = formatShortTime(estHours, minutes);
-      
-      return `${pstTime}/${estTime}`;
-    }
-
-    function formatShortTime(hours, minutes) {
-      if (hours === 0) {
-        return minutes === 0 ? "12A" : `12:${minutes.toString().padStart(2, '0')}A`;
-      } else if (hours < 12) {
-        return minutes === 0 ? `${hours}A` : `${hours}:${minutes.toString().padStart(2, '0')}A`;
-      } else if (hours === 12) {
-        return minutes === 0 ? "12" : `12:${minutes.toString().padStart(2, '0')}`;
-      } else {
-        return minutes === 0 ? `${hours - 12}` : `${hours - 12}:${minutes.toString().padStart(2, '0')}`;
-      }
-    }
+    function copyToClipboard(elementId) {
       const text = document.getElementById(elementId).innerText;
       navigator.clipboard.writeText(text).then(() => {
         // Visual feedback
