@@ -16,14 +16,34 @@
     h1 {
       font-size: 24px;
     }
-    #output {
-      white-space: pre-wrap;
-      font-family: monospace;
+    .container {
       background: #f1f1f1;
       padding: 20px;
       margin-top: 20px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      position: relative;
+    }
+    .output-text {
+      white-space: pre-wrap;
+      font-family: monospace;
+      margin-bottom: 10px;
+    }
+    .copy-button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .copy-button:hover {
+      background: #218838;
+    }
+    .copy-button:active {
+      background: #1e7e34;
     }
     input[type="date"] {
       padding: 8px;
@@ -42,6 +62,13 @@
     button:hover {
       background: #005a87;
     }
+    #status {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -52,7 +79,17 @@
     <button onclick="showSchedule()">Show Schedule</button>
   </div>
 
-  <div id="output">Loading schedule data...</div>
+  <div id="status">Loading schedule data...</div>
+
+  <div id="summaryContainer" class="container" style="display: none;">
+    <div id="summaryOutput" class="output-text"></div>
+    <button class="copy-button" onclick="copyToClipboard('summaryOutput')">Copy to Clipboard</button>
+  </div>
+
+  <div id="fullContainer" class="container" style="display: none;">
+    <div id="fullOutput" class="output-text"></div>
+    <button class="copy-button" onclick="copyToClipboard('fullOutput')">Copy to Clipboard</button>
+  </div>
 
   <script>
     const mlbCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
@@ -102,21 +139,27 @@
 
     function checkReady() {
       if (mlbLoaded && wnbaLoaded) {
-        document.getElementById("output").innerText = "Schedule data loaded. Select a date to view games.";
+        document.getElementById("status").innerText = "Schedule data loaded. Select a date to view games.";
       }
     }
 
     function showSchedule() {
       const inputDate = document.getElementById("datePicker").value;
-      const output = document.getElementById("output");
+      const status = document.getElementById("status");
+      const summaryContainer = document.getElementById("summaryContainer");
+      const fullContainer = document.getElementById("fullContainer");
 
       if (!mlbLoaded || !wnbaLoaded) {
-        output.innerText = "Please wait... still loading data.";
+        status.innerText = "Please wait... still loading data.";
+        summaryContainer.style.display = "none";
+        fullContainer.style.display = "none";
         return;
       }
 
       if (!inputDate) {
-        output.innerText = "Please select a date.";
+        status.innerText = "Please select a date.";
+        summaryContainer.style.display = "none";
+        fullContainer.style.display = "none";
         return;
       }
 
@@ -129,6 +172,7 @@
       const mlbTime = getEarliestTime(mlbForDay);
       const wnbaTime = getEarliestTime(wnbaForDay);
 
+      // Create summary
       let summary = `Games on ${selectedDate.toLocaleDateString("en-US", {
         weekday: "long", month: "long", day: "numeric", year: "numeric"
       })}:\n———————————————\n`;
@@ -136,25 +180,111 @@
       summary += `${wnbaForDay.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}\n`;
       summary += `———————————————\n${mlbForDay.length + wnbaForDay.length} total games\n———————————————`;
 
-      if (mlbForDay.length > 0) {
-        summary += `\n\nMLB Games:\n`;
-        mlbForDay.forEach(g => {
-          summary += `• ${g.time || "??"} — ${g.matchup || "[Matchup missing]"}\n`;
+      // Create full breakdown
+      let fullBreakdown = "Full Breakdown: (est)\n";
+      
+      // Combine all games with times and sort
+      const allGames = [];
+      
+      mlbForDay.forEach(g => {
+        const timeObj = parseTime(g.time);
+        allGames.push({
+          league: 'MLB',
+          time: g.time,
+          timeObj: timeObj,
+          matchup: g.matchup
         });
-      }
-
-      if (wnbaForDay.length > 0) {
-        summary += `\nWNBA Games:\n`;
-        wnbaForDay.forEach(g => {
-          summary += `• ${g.time || "??"} — ${g.matchup || "[Matchup missing]"}\n`;
+      });
+      
+      wnbaForDay.forEach(g => {
+        const timeObj = parseTime(g.time);
+        allGames.push({
+          league: 'WNBA',
+          time: g.time,
+          timeObj: timeObj,
+          matchup: g.matchup
         });
+      });
+
+      // Sort by time
+      allGames.sort((a, b) => {
+        if (!a.timeObj && !b.timeObj) return 0;
+        if (!a.timeObj) return 1;
+        if (!b.timeObj) return -1;
+        return a.timeObj - b.timeObj;
+      });
+
+      // Group games by time and create output
+      const timeGroups = {};
+      allGames.forEach(game => {
+        const timeKey = game.time || "??";
+        if (!timeGroups[timeKey]) {
+          timeGroups[timeKey] = { MLB: 0, WNBA: 0 };
+        }
+        timeGroups[timeKey][game.league]++;
+      });
+
+      // Build the full breakdown text
+      Object.keys(timeGroups).forEach(timeKey => {
+        const group = timeGroups[timeKey];
+        const formattedTime = formatTimeForBreakdown(timeKey);
+        
+        if (group.MLB > 0) {
+          const countStr = group.MLB > 1 ? ` (${group.MLB})` : '';
+          fullBreakdown += `MLB${countStr} - ${formattedTime}\n`;
+        }
+        if (group.WNBA > 0) {
+          const countStr = group.WNBA > 1 ? ` (${group.WNBA})` : '';
+          fullBreakdown += `WNBA${countStr} - ${formattedTime}\n`;
+        }
+      });
+
+      if (allGames.length === 0) {
+        fullBreakdown += "No games found for this date.";
       }
 
-      if (mlbForDay.length === 0 && wnbaForDay.length === 0) {
-        summary += `\nNo games found for this date.`;
-      }
+      // Update displays
+      document.getElementById("summaryOutput").innerText = summary;
+      document.getElementById("fullOutput").innerText = fullBreakdown;
+      
+      summaryContainer.style.display = "block";
+      fullContainer.style.display = "block";
+      status.style.display = "none";
+    }
 
-      output.innerText = summary;
+    function formatTimeForBreakdown(timeStr) {
+      if (!timeStr || timeStr === "??") return "??";
+      
+      const timeObj = parseTime(timeStr);
+      if (!timeObj) return timeStr;
+      
+      const h = timeObj.getHours();
+      const m = timeObj.getMinutes();
+      
+      if (h === 0 && m === 0) return "12:00a";
+      if (h < 12) {
+        return h === 0 ? `12:${m.toString().padStart(2, '0')}a` : `${h}:${m.toString().padStart(2, '0')}a`;
+      } else {
+        return h === 12 ? `12:${m.toString().padStart(2, '0')}` : `${h - 12}:${m.toString().padStart(2, '0')}`;
+      }
+    }
+
+    function copyToClipboard(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        // Visual feedback
+        const button = event.target;
+        const originalText = button.innerText;
+        button.innerText = "Copied!";
+        button.style.background = "#20c997";
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.style.background = "#28a745";
+        }, 1000);
+      }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy to clipboard');
+      });
     }
 
     function formatShortDate(date) {
