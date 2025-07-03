@@ -6,9 +6,218 @@
   <title>Schedule Breakdown</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <style>
-    /* ... [your CSS unchanged for brevity] ... */
-    /* Copy all your CSS here, unchanged. */
-    /* For brevity, not included in this snippet. */
+ * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 2rem;
+      background: linear-gradient(45deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
+    }
+
+    h4 {
+       text-align: center;
+      margin-bottom: 2rem;
+      background: linear-gradient(45deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    .container {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      padding: 2rem;
+      margin-top: 1.5rem;
+      border-radius: 16px;
+      position: relative;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .container:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+    }
+    
+    .output-text {
+      white-space: pre-wrap;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+      margin-bottom: 1rem;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    
+    .copy-button {
+      background: linear-gradient(45deg, #10b981, #059669);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+    
+    .copy-button:hover {
+      background: linear-gradient(45deg, #059669, #047857);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+    
+    .copy-button:active {
+      transform: translateY(0);
+    }
+    
+    input[type="date"] {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      background: rgba(30, 41, 59, 0.8);
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    input[type="date"]:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.7;
+    }
+    
+    button {
+      padding: 0.75rem 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+    
+    button:hover {
+      background: linear-gradient(45deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    #status {
+      background: rgba(30, 41, 59, 0.6);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-top: 2rem;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      text-align: center;
+      color: #94a3b8;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(96, 165, 250, 0.3);
+      border-radius: 50%;
+      border-top-color: #60a5fa;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 0.5rem;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .summary-header {
+      color: #60a5fa;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+    
+    .full-header {
+      color: #a78bfa;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+    
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .controls {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      input[type="date"], button {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
