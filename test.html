@@ -286,7 +286,7 @@
       if (isAM && hour === 12) hour = 0;
       hour -= 3;
       if (hour < 0) hour += 24;
-      let period = hour >= 12 ? '' : 'A';
+      let period = hour < 12 ? 'a' : 'p';
       let pstHour = hour % 12 || 12;
       return `${pstHour}:${minute.toString().padStart(2, '0')}${period}`;
     }
