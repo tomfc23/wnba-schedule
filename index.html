@@ -183,7 +183,7 @@
   </style>
 </head>
 <body>
-  <h1>Schedule Breakdown w/ UFC 1.0</h1>
+  <h1>Schedule Breakdown</h1>
   <h4>Now includes MLB, WNBA, Golf, and UFC schedules!</h4>
   <div class="controls">
     <input type="date" id="datePicker" />
@@ -323,10 +323,10 @@
           fullBreakdown += `Golf - ${abbreviateGolfEvent(g.event)}\n`;
         });
       }
-      // UFC events next
+      // UFC events next, but do NOT show event name, just 'UFC -'
       if (ufcForDay.length > 0) {
-        ufcForDay.forEach(e => {
-          fullBreakdown += `UFC - ${e.event}\n`;
+        ufcForDay.forEach(() => {
+          fullBreakdown += `UFC -\n`;
         });
       }
 
