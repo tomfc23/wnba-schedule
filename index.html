@@ -11,14 +11,19 @@
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
+      background-color: #fdfdfd;
+    }
+    h1 {
+      font-size: 24px;
     }
     #output {
       white-space: pre-wrap;
       font-family: monospace;
-      background: #f5f5f5;
+      background: #f1f1f1;
       padding: 20px;
       margin-top: 20px;
       border-radius: 5px;
+      border: 1px solid #ccc;
     }
     input[type="date"] {
       padding: 8px;
@@ -40,14 +45,14 @@
   </style>
 </head>
 <body>
-  <h1>MLB & WNBA Schedule Viewer 3.3</h1>
+  <h1>MLB & WNBA Schedule Viewer 3.4</h1>
 
   <div>
     <input type="date" id="datePicker" />
     <button onclick="showSchedule()">Show Schedule</button>
   </div>
 
-  <div id="output">Loading schedule data…</div>
+  <div id="output">Loading schedule data...</div>
 
   <script>
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
@@ -93,11 +98,11 @@
         return;
       }
 
-      const selectedDate = new Date(inputDate + "T00:00:00");
+      const selectedDate = new Date(inputDate + "T00:00:00"); // Force local timezone
       const shortDate = formatShortDate(selectedDate);
 
-      const mlbGames = games.filter(g => matchShortDate(g[columns.mlb.date], shortDate));
-      const wnbaGames = games.filter(g => matchShortDate(g[columns.wnba.date], shortDate));
+      const mlbGames = games.filter(g => matchDate(g[columns.mlb.date], shortDate));
+      const wnbaGames = games.filter(g => matchDate(g[columns.wnba.date], shortDate));
 
       const mlbTime = getEarliestTime(mlbGames, columns.mlb.time);
       const wnbaTime = getEarliestTime(wnbaGames, columns.wnba.time);
@@ -137,9 +142,22 @@
       return `${m}/${d}/${y}`;
     }
 
-    function matchShortDate(csvDate, target) {
+    function matchDate(csvDate, shortTarget) {
       if (!csvDate) return false;
-      return csvDate.trim().replace(/^0+/, '').replace(/\/0+/g, '/') === target;
+
+      const normalize = str => str
+        .toString()
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(/^0+/, '')          // Remove leading zero from month
+        .replace(/\/0+/g, '/');      // Remove leading zero from day
+
+      const csvCleaned = normalize(csvDate);
+      const targetCleaned = normalize(shortTarget);
+
+      const isMatch = csvCleaned === targetCleaned;
+      console.log(`Matching: "${csvCleaned}" == "${targetCleaned}" → ${isMatch}`);
+      return isMatch;
     }
 
     function getEarliestTime(gameList, timeKey) {
