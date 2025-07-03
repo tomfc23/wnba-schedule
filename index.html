@@ -1,26 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WNBA Schedule</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WNBA 2025 Season Schedule from Wikipedia</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #121212; color: #eee; padding: 20px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+  th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+  th { background: #4CAF50; }
+</style>
 </head>
 <body>
-  <h1>WNBA Full Schedule (EST)</h1>
-  <table id="schedule-table">
+  <h1>WNBA 2025 Season Schedule (Wikipedia)</h1>
+  <p id="status">Loading schedule...</p>
+  <table id="schedule-table" style="display:none;">
     <thead>
-      <tr>
-        <th>Date</th>
-        <th>Time (EST)</th>
-        <th>Matchup</th>
-      </tr>
+      <tr><th>Date</th><th>Time (ET)</th><th>Matchup</th></tr>
     </thead>
-    <tbody>
-      <!-- Rows will be inserted by JS -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
-  <script src="script.js"></script>
+<script>
+async function fetchScheduleFromWikipedia() {
+  const wikiURL = 'https://en.wikipedia.org/wiki/2025_WNBA_season';
+
+  try {
+    // Wikipedia's CORS policy usually allows cross-origin fetch for pages
+    const response = await fetch(wikiURL);
+    if (!response.ok) throw new Error('Failed to fetch Wikipedia page.');
+
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    // Wikipedia has multiple tables; find the one with the schedule
+    // Usually the schedule table has class 'wikitable' and includes "Date", "Time", "Matchup" headers
+    const tables = [...doc.querySelectorAll('table.wikitable')];
+    let scheduleTable = null;
+
+    for (const table of tables) {
+      const headers = [...table.querySelectorAll('th')].map(th => th.innerText.trim().toLowerCase());
+      if (headers.includes('date') && headers.includes('time') && headers.some(h => h.includes('matchup') || h.includes('opponent'))) {
+        scheduleTable = table;
+        break;
+      }
+    }
+
+    if (!scheduleTable) throw new Error('Schedule table not found.');
+
+    const tbody = document.querySelector('#schedule-table tbody');
+    tbody.innerHTML = '';
+
+    // Iterate rows, skip header
+    const rows = [...scheduleTable.querySelectorAll('tr')].slice(1);
+
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length < 3) return; // skip incomplete rows
+
+      const date = cells[0].innerText.trim();
+      const time = cells[1].innerText.trim();
+      const matchup = cells[2].innerText.trim();
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${matchup}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('status').style.display = 'none';
+    document.getElementById('schedule-table').style.display = 'table';
+
+  } catch (error) {
+    document.getElementById('status').innerText = 'Error loading schedule: ' + error.message;
+  }
+}
+
+fetchScheduleFromWikipedia();
+</script>
 </body>
 </html>
