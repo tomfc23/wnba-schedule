@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Schedule Viewer</title>
+  <title>MLB & WNBA Schedule Viewer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <style>
     body {
@@ -45,7 +45,7 @@
   </style>
 </head>
 <body>
-  <h1>MLB & WNBA Schedule Viewer 3.4</h1>
+  <h1>MLB & WNBA Schedule Viewer 4.0</h1>
 
   <div>
     <input type="date" id="datePicker" />
@@ -55,41 +55,63 @@
   <div id="output">Loading schedule data...</div>
 
   <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
-    let games = [];
-    let csvLoaded = false;
+    const mlbCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
+    const wnbaCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTzPTKPPWRgmQ6cA4k-7jMtHuWffIDlvOxSmVrLVJV6xboTRuSxzxfFjKI7oWJUlx0DsT1fxr_7uI-j/pub?output=csv";
 
-    const columns = {
-      mlb: { date: "MLB Date", time: "MLB Time", matchup: "MLB Matchup" },
-      wnba: { date: "WNBA Date", time: "WNBA Time", matchup: "WNBA Matchup" }
-    };
+    let mlbGames = [];
+    let wnbaGames = [];
+    let mlbLoaded = false;
+    let wnbaLoaded = false;
 
+    // Set date picker default to today
     window.onload = () => {
       document.getElementById("datePicker").valueAsDate = new Date();
     };
 
-    Papa.parse(csvUrl, {
+    // Load MLB CSV
+    Papa.parse(mlbCsvUrl, {
       download: true,
       header: true,
       skipEmptyLines: true,
       complete: function (results) {
-        games = results.data.filter(row =>
-          Object.values(row).some(val => val && val.trim() !== "")
-        );
-        csvLoaded = true;
-        document.getElementById("output").innerText = "Schedule data loaded. Select a date to view games.";
-      },
-      error: function () {
-        document.getElementById("output").innerText = "Failed to load schedule data.";
+        mlbGames = results.data.map(row => ({
+          date: row["MLB Date"],
+          time: row["MLB Time"],
+          matchup: row["MLB Matchup"]
+        }));
+        mlbLoaded = true;
+        checkReady();
       }
     });
+
+    // Load WNBA CSV
+    Papa.parse(wnbaCsvUrl, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function (results) {
+        wnbaGames = results.data.map(row => ({
+          date: row["WNBA Date"],
+          time: row["WNBA Time"],
+          matchup: row["WNBA Matchup"]
+        }));
+        wnbaLoaded = true;
+        checkReady();
+      }
+    });
+
+    function checkReady() {
+      if (mlbLoaded && wnbaLoaded) {
+        document.getElementById("output").innerText = "Schedule data loaded. Select a date to view games.";
+      }
+    }
 
     function showSchedule() {
       const inputDate = document.getElementById("datePicker").value;
       const output = document.getElementById("output");
 
-      if (!csvLoaded) {
-        output.innerText = "Please wait... loading schedule data.";
+      if (!mlbLoaded || !wnbaLoaded) {
+        output.innerText = "Please wait... still loading data.";
         return;
       }
 
@@ -98,37 +120,37 @@
         return;
       }
 
-      const selectedDate = new Date(inputDate + "T00:00:00"); // Force local timezone
+      const selectedDate = new Date(inputDate + "T00:00:00");
       const shortDate = formatShortDate(selectedDate);
 
-      const mlbGames = games.filter(g => matchDate(g[columns.mlb.date], shortDate));
-      const wnbaGames = games.filter(g => matchDate(g[columns.wnba.date], shortDate));
+      const mlbForDay = mlbGames.filter(g => matchDate(g.date, shortDate));
+      const wnbaForDay = wnbaGames.filter(g => matchDate(g.date, shortDate));
 
-      const mlbTime = getEarliestTime(mlbGames, columns.mlb.time);
-      const wnbaTime = getEarliestTime(wnbaGames, columns.wnba.time);
+      const mlbTime = getEarliestTime(mlbForDay);
+      const wnbaTime = getEarliestTime(wnbaForDay);
 
       let summary = `Games on ${selectedDate.toLocaleDateString("en-US", {
         weekday: "long", month: "long", day: "numeric", year: "numeric"
       })}:\n———————————————\n`;
-      summary += `${mlbGames.length} MLB ${mlbTime ? `(${mlbTime})` : ''}\n`;
-      summary += `${wnbaGames.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}\n`;
-      summary += `———————————————\n${mlbGames.length + wnbaGames.length} total games\n———————————————`;
+      summary += `${mlbForDay.length} MLB ${mlbTime ? `(${mlbTime})` : ''}\n`;
+      summary += `${wnbaForDay.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}\n`;
+      summary += `———————————————\n${mlbForDay.length + wnbaForDay.length} total games\n———————————————`;
 
-      if (mlbGames.length > 0) {
+      if (mlbForDay.length > 0) {
         summary += `\n\nMLB Games:\n`;
-        mlbGames.forEach(g => {
-          summary += `• ${g[columns.mlb.time] || "??"} — ${g[columns.mlb.matchup] || "[Matchup missing]"}\n`;
+        mlbForDay.forEach(g => {
+          summary += `• ${g.time || "??"} — ${g.matchup || "[Matchup missing]"}\n`;
         });
       }
 
-      if (wnbaGames.length > 0) {
+      if (wnbaForDay.length > 0) {
         summary += `\nWNBA Games:\n`;
-        wnbaGames.forEach(g => {
-          summary += `• ${g[columns.wnba.time] || "??"} — ${g[columns.wnba.matchup] || "[Matchup missing]"}\n`;
+        wnbaForDay.forEach(g => {
+          summary += `• ${g.time || "??"} — ${g.matchup || "[Matchup missing]"}\n`;
         });
       }
 
-      if (mlbGames.length === 0 && wnbaGames.length === 0) {
+      if (mlbForDay.length === 0 && wnbaForDay.length === 0) {
         summary += `\nNo games found for this date.`;
       }
 
@@ -144,28 +166,21 @@
 
     function matchDate(csvDate, shortTarget) {
       if (!csvDate) return false;
-
       const normalize = str => str
         .toString()
         .trim()
         .replace(/\s+/g, '')
-        .replace(/^0+/, '')          // Remove leading zero from month
-        .replace(/\/0+/g, '/');      // Remove leading zero from day
-
-      const csvCleaned = normalize(csvDate);
-      const targetCleaned = normalize(shortTarget);
-
-      const isMatch = csvCleaned === targetCleaned;
-      console.log(`Matching: "${csvCleaned}" == "${targetCleaned}" → ${isMatch}`);
-      return isMatch;
+        .replace(/^0+/, '')          // Remove leading 0 from month
+        .replace(/\/0+/g, '/');      // Remove leading 0 from day
+      return normalize(csvDate) === normalize(shortTarget);
     }
 
-    function getEarliestTime(gameList, timeKey) {
-      const validTimes = gameList
-        .map(g => parseTime(g[timeKey]))
+    function getEarliestTime(games) {
+      const times = games
+        .map(g => parseTime(g.time))
         .filter(t => t !== null)
         .sort((a, b) => a - b);
-      return validTimes.length ? formatTime(validTimes[0]) : null;
+      return times.length ? formatTime(times[0]) : null;
     }
 
     function parseTime(str) {
