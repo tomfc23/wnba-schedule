@@ -1,100 +1,170 @@
-const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #output {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+        input[type="date"] {
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005a87;
+        }
+    </style>
+</head>
+<body>
+    <h1>MLB & WNBA Schedule Viewer</h1>
+    
+    <div>
+        <input type="date" id="datePicker" />
+        <button onclick="showSchedule()">Show Schedule</button>
+    </div>
+    
+    <div id="output"></div>
 
-let games = [];
-let columns = { mlb: {}, wnba: {} };
+    <script>
+        const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
+        let games = [];
+        let columns = { mlb: {}, wnba: {} };
 
-Papa.parse(csvUrl, {
-  download: true,
-  header: true,
-  complete: function (results) {
-    games = results.data;
-    detectColumns(games[0]);
-  }
-});
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            complete: function (results) {
+                games = results.data;
+                console.log("Raw data:", games[0]); // Debug log
+                detectColumns(games[0]);
+                console.log("Detected columns:", columns); // Debug log
+            }
+        });
 
-// Dynamically detect which columns belong to MLB and WNBA
-function detectColumns(row) {
-  const keys = Object.keys(row);
-  const mlbCols = keys.slice(0, 3); // Assumes MLB columns come first
-  const wnbaCols = keys.slice(3);   // Then WNBA columns
+        // Fixed column detection - Papa Parse renames duplicate headers
+        function detectColumns(row) {
+            const keys = Object.keys(row);
+            console.log("All column keys:", keys); // Debug log
+            
+            // MLB columns (original names)
+            columns.mlb = {
+                date: "Date",
+                time: "Time", 
+                matchup: "Matchup"
+            };
+            
+            // WNBA columns (Papa Parse adds __1 suffix for duplicates)
+            columns.wnba = {
+                date: "Date__1",
+                time: "Time__1",
+                matchup: "Matchup__1"
+            };
+        }
 
-  columns.mlb = {
-    date: mlbCols.find(k => k.toLowerCase().includes("date")),
-    time: mlbCols.find(k => k.toLowerCase().includes("time")),
-    matchup: mlbCols.find(k => k.toLowerCase().includes("matchup"))
-  };
+        function showSchedule() {
+            const inputDate = document.getElementById("datePicker").value;
+            if (!inputDate) return;
 
-  columns.wnba = {
-    date: wnbaCols.find(k => k.toLowerCase().includes("date")),
-    time: wnbaCols.find(k => k.toLowerCase().includes("time")),
-    matchup: wnbaCols.find(k => k.toLowerCase().includes("matchup"))
-  };
-}
+            const dateStr = formatToShortDate(inputDate);
+            const selectedDate = new Date(inputDate);
+            
+            console.log("Looking for date:", dateStr); // Debug log
+            
+            // Filter games for the selected date
+            const mlbGames = games.filter(g => {
+                const gameDate = g[columns.mlb.date];
+                console.log("MLB game date:", gameDate, "matches:", gameDate === dateStr);
+                return gameDate === dateStr;
+            });
+            
+            const wnbaGames = games.filter(g => {
+                const gameDate = g[columns.wnba.date];
+                console.log("WNBA game date:", gameDate, "matches:", gameDate === dateStr);
+                return gameDate === dateStr;
+            });
 
-function showSchedule() {
-  const inputDate = document.getElementById("datePicker").value;
-  if (!inputDate) return;
+            console.log("MLB games found:", mlbGames.length);
+            console.log("WNBA games found:", wnbaGames.length);
 
-  const dateStr = formatToShortDate(inputDate);
-  const selectedDate = new Date(inputDate);
+            const mlbTime = getEarliestTime(mlbGames, columns.mlb.time);
+            const wnbaTime = getEarliestTime(wnbaGames, columns.wnba.time);
 
-  const mlbGames = games.filter(g => g[columns.mlb.date] === dateStr);
-  const wnbaGames = games.filter(g => g[columns.wnba.date] === dateStr);
+            const formattedDate = selectedDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "numeric",
+                day: "numeric"
+            });
 
-  const mlbTime = getEarliestTime(mlbGames, columns.mlb.time);
-  const wnbaTime = getEarliestTime(wnbaGames, columns.wnba.time);
+            const summary = [
+                `Games on ${formattedDate}:`,
+                `———————————————`,
+                `${mlbGames.length} MLB ${mlbTime ? `(${mlbTime})` : ''}`,
+                `${wnbaGames.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}`,
+                `———————————————`,
+                `${mlbGames.length + wnbaGames.length} total games`,
+                `———————————————`
+            ].join("\n");
 
-  const formattedDate = selectedDate.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "numeric",
-    day: "numeric"
-  });
+            document.getElementById("output").innerText = summary;
+        }
 
-  const summary = [
-    `Games on ${formattedDate}:`,
-    `———————————————`,
-    `${mlbGames.length} MLB ${mlbTime ? `(${mlbTime})` : ''}`,
-    `${wnbaGames.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}`,
-    `———————————————`,
-    `${mlbGames.length + wnbaGames.length} total games`,
-    `———————————————`
-  ].join("\n");
+        function formatToShortDate(dateStr) {
+            const d = new Date(dateStr);
+            const mm = d.getMonth() + 1;
+            const dd = d.getDate();
+            const yy = d.getFullYear().toString().slice(2);
+            return `${mm}/${dd}/${yy}`;
+        }
 
-  document.getElementById("output").innerText = summary;
-}
+        function getEarliestTime(gameList, timeKey) {
+            const validTimes = gameList
+                .map(g => parseTime(g[timeKey]))
+                .filter(t => t !== null)
+                .sort((a, b) => a - b);
+            return validTimes.length ? formatTime(validTimes[0]) : null;
+        }
 
-function formatToShortDate(dateStr) {
-  const d = new Date(dateStr);
-  const mm = d.getMonth() + 1;
-  const dd = d.getDate();
-  const yy = d.getFullYear().toString().slice(2);
-  return `${mm}/${dd}/${yy}`;
-}
+        function parseTime(str) {
+            if (!str || !str.includes(":")) return null;
+            const [time, period] = str.trim().split(" ");
+            if (!time || !period) return null;
+            let [h, m] = time.split(":").map(Number);
+            if (period === "PM" && h < 12) h += 12;
+            if (period === "AM" && h === 12) h = 0;
+            return new Date(0, 0, 0, h, m);
+        }
 
-function getEarliestTime(gameList, timeKey) {
-  const validTimes = gameList
-    .map(g => parseTime(g[timeKey]))
-    .filter(t => t !== null)
-    .sort((a, b) => a - b);
-
-  return validTimes.length ? formatTime(validTimes[0]) : null;
-}
-
-function parseTime(str) {
-  if (!str || !str.includes(":")) return null;
-  const [time, period] = str.trim().split(" ");
-  if (!time || !period) return null;
-
-  let [h, m] = time.split(":").map(Number);
-  if (period === "PM" && h < 12) h += 12;
-  if (period === "AM" && h === 12) h = 0;
-
-  return new Date(0, 0, 0, h, m);
-}
-
-function formatTime(date) {
-  const h = date.getHours();
-  const m = date.getMinutes().toString().padStart(2, '0');
-  const suffix = h < 12 ? 'A' : '';
-  return `${(h % 12 || 12)}:${m}${suffix}`;
-}
+        function formatTime(date) {
+            const h = date.getHours();
+            const m = date.getMinutes().toString().padStart(2, '0');
+            const suffix = h < 12 ? 'AM' : 'PM';
+            const displayH = h % 12 || 12;
+            return `${displayH}:${m} ${suffix}`;
+        }
+    </script>
+</body>
+</html>
