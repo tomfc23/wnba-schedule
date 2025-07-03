@@ -1,19 +1,25 @@
 body {
-  font-family: Arial, sans-serif;
   background: #121212;
-  color: white;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
   padding: 20px;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
+
+input, button {
+  margin-top: 10px;
+  font-size: 16px;
+  padding: 5px 10px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+}
+
+pre {
   margin-top: 20px;
-}
-th, td {
-  padding: 10px;
-  border: 1px solid #444;
-  text-align: center;
-}
-th {
-  background-color: #4CAF50;
+  font-size: 16px;
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 8px;
+  white-space: pre-wrap;
 }
