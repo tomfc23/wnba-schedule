@@ -6,10 +6,7 @@
   <title>Schedule Breakdown</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <style>
- * {
-      box-sizing: border-box;
-    }
-    
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       max-width: 900px;
@@ -20,7 +17,6 @@
       min-height: 100vh;
       line-height: 1.6;
     }
-    
     h1 {
       font-size: 2.5rem;
       font-weight: 700;
@@ -32,9 +28,8 @@
       background-clip: text;
       text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
     }
-
     h4 {
-       text-align: center;
+      text-align: center;
       margin-bottom: 2rem;
       background: linear-gradient(45deg, #60a5fa, #a78bfa);
       -webkit-background-clip: text;
@@ -42,7 +37,6 @@
       background-clip: text;
       text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
     }
-    
     .controls {
       display: flex;
       gap: 1rem;
@@ -51,7 +45,6 @@
       margin-bottom: 2rem;
       flex-wrap: wrap;
     }
-    
     .container {
       background: rgba(30, 41, 59, 0.6);
       backdrop-filter: blur(10px);
@@ -63,12 +56,10 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
       transition: all 0.3s ease;
     }
-    
     .container:hover {
       transform: translateY(-2px);
       box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
     }
-    
     .output-text {
       white-space: pre-wrap;
       font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
@@ -81,7 +72,6 @@
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.1);
     }
-    
     .copy-button {
       background: linear-gradient(45deg, #10b981, #059669);
       color: white;
@@ -94,17 +84,14 @@
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
     }
-    
     .copy-button:hover {
       background: linear-gradient(45deg, #059669, #047857);
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
     }
-    
     .copy-button:active {
       transform: translateY(0);
     }
-    
     input[type="date"] {
       padding: 0.75rem 1rem;
       font-size: 1rem;
@@ -115,18 +102,15 @@
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
     }
-    
     input[type="date"]:focus {
       outline: none;
       border-color: #60a5fa;
       box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
     }
-    
     input[type="date"]::-webkit-calendar-picker-indicator {
       filter: invert(1);
       opacity: 0.7;
     }
-    
     button {
       padding: 0.75rem 2rem;
       font-size: 1rem;
@@ -139,17 +123,14 @@
       transition: all 0.3s ease;
       box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     }
-    
     button:hover {
       background: linear-gradient(45deg, #1d4ed8, #1e40af);
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
     }
-    
     button:active {
       transform: translateY(0);
     }
-    
     #status {
       background: rgba(30, 41, 59, 0.6);
       backdrop-filter: blur(10px);
@@ -161,7 +142,6 @@
       text-align: center;
       color: #94a3b8;
     }
-    
     .loading {
       display: inline-block;
       width: 20px;
@@ -172,138 +152,96 @@
       animation: spin 1s ease-in-out infinite;
       margin-right: 0.5rem;
     }
-    
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
     .fade-in {
       animation: fadeIn 0.5s ease-in-out;
     }
-    
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    
     .summary-header {
       color: #60a5fa;
       font-weight: 600;
       margin-bottom: 1rem;
       font-size: 1.1rem;
     }
-    
     .full-header {
       color: #a78bfa;
       font-weight: 600;
       margin-bottom: 1rem;
       font-size: 1.1rem;
     }
-    
     @media (max-width: 640px) {
-      body {
-        padding: 1rem;
-      }
-      
-      h1 {
-        font-size: 2rem;
-      }
-      
-      .controls {
-        flex-direction: column;
-        gap: 1rem;
-      }
-      
-      input[type="date"], button {
-        width: 100%;
-      }
+      body { padding: 1rem; }
+      h1 { font-size: 2rem; }
+      .controls { flex-direction: column; gap: 1rem; }
+      input[type="date"], button { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <h1>Schedule Breakdown</h1>
-  <h4>Disclaimer: This now includes MLB, WNBA, and PGA Golf regular seasons.</h4>
+  <h1>Schedule Breakdown 2.0</h1>
+  <h4>Now includes MLB, WNBA, and Golf schedules!</h4>
   <div class="controls">
     <input type="date" id="datePicker" />
     <button onclick="showSchedule()">Show Schedule</button>
   </div>
-
   <div id="status">
     <div class="loading"></div>
     Loading schedule data...
   </div>
-
   <div id="summaryContainer" class="container" style="display: none;">
     <div class="summary-header">📊 Game Summary</div>
     <div id="summaryOutput" class="output-text"></div>
     <button class="copy-button" onclick="copyToClipboard('summaryOutput')">Copy to Clipboard</button>
   </div>
-
   <div id="fullContainer" class="container" style="display: none;">
     <div class="full-header">📋 Full Breakdown</div>
     <div id="fullOutput" class="output-text"></div>
     <button class="copy-button" onclick="copyToClipboard('fullOutput')">Copy to Clipboard</button>
   </div>
-
   <script>
     const mlbCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
     const wnbaCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTzPTKPPWRgmQ6cA4k-7jMtHuWffIDlvOxSmVrLVJV6xboTRuSxzxfFjKI7oWJUlx0DsT1fxr_7uI-j/pub?output=csv";
     const golfCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSAJavndRe-9tsv281xto4PhImuT52qPZPnF6aKCk7FI_eXbs3k_kzjnQzR5JVrXfrmm9ZcqCb58jNH/pub?output=csv";
 
-    let mlbGames = [];
-    let wnbaGames = [];
-    let golfGames = [];
-    let mlbLoaded = false;
-    let wnbaLoaded = false;
-    let golfLoaded = false;
+    let mlbGames = [], wnbaGames = [], golfGames = [];
+    let mlbLoaded = false, wnbaLoaded = false, golfLoaded = false;
 
     window.onload = () => {
       document.getElementById("datePicker").valueAsDate = new Date();
     };
 
     Papa.parse(mlbCsvUrl, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
+      download: true, header: true, skipEmptyLines: true,
       complete: function (results) {
         mlbGames = results.data.map(row => ({
-          date: row["MLB Date"],
-          time: row["MLB Time"],
-          matchup: row["MLB Matchup"]
+          date: row["MLB Date"], time: row["MLB Time"], matchup: row["MLB Matchup"]
         }));
-        mlbLoaded = true;
-        checkReady();
+        mlbLoaded = true; checkReady();
       }
     });
 
     Papa.parse(wnbaCsvUrl, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
+      download: true, header: true, skipEmptyLines: true,
       complete: function (results) {
         wnbaGames = results.data.map(row => ({
-          date: row["WNBA Date"],
-          time: row["WNBA Time"],
-          matchup: row["WNBA Matchup"]
+          date: row["WNBA Date"], time: row["WNBA Time"], matchup: row["WNBA Matchup"]
         }));
-        wnbaLoaded = true;
-        checkReady();
+        wnbaLoaded = true; checkReady();
       }
     });
 
-    // GOLF CSV uses no headers - custom parse
     Papa.parse(golfCsvUrl, {
-      download: true,
-      header: false,
-      skipEmptyLines: true,
+      download: true, header: false, skipEmptyLines: true,
       complete: function (results) {
-        // Each row is [date, event]
         golfGames = results.data.map(row => ({
-          date: row[0], // format: 7/10/25
-          event: row[1]
+          date: row[0], event: row[1]
         }));
-        golfLoaded = true;
-        checkReady();
+        golfLoaded = true; checkReady();
       }
     });
 
@@ -311,6 +249,14 @@
       if (mlbLoaded && wnbaLoaded && golfLoaded) {
         document.getElementById("status").innerHTML = "✅ Schedule data loaded. Select a date to view games.";
       }
+    }
+
+    function abbreviateGolfEvent(eventName) {
+      if (!eventName) return "";
+      if (eventName.includes("Genesis Scottish Open")) return "GSO";
+      if (eventName.includes("ISCO Championship")) return "ISCO";
+      // Add more abbreviations as needed
+      return eventName;
     }
 
     function showSchedule() {
@@ -343,19 +289,27 @@
       const mlbTime = getEarliestTime(mlbForDay);
       const wnbaTime = getEarliestTime(wnbaForDay);
 
-      // Create summary
+      // --- Summary Section ---
       let summary = `Games on ${selectedDate.toLocaleDateString("en-US", {
         weekday: "long", month: "long", day: "numeric", year: "numeric"
       })}:\n———————————————\n`;
-      summary += `${mlbForDay.length} MLB ${mlbTime ? `(${mlbTime})` : ''}\n`;
-      summary += `${wnbaForDay.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}\n`;
-      summary += `${golfForDay.length} Golf\n`;
+      summary += `${mlbForDay.length} MLB${mlbTime ? ` (${mlbTime})` : ''}\n`;
+      summary += `${wnbaForDay.length} WNBA${wnbaTime ? ` (${wnbaTime})` : ''}\n`;
+      if (golfForDay.length > 0) {
+        summary += `${golfForDay.length} Golf\n`;
+      }
       summary += `———————————————\n${mlbForDay.length + wnbaForDay.length + golfForDay.length} total events\n———————————————`;
 
-      // Create full breakdown
+      // --- Full Breakdown Section ---
       let fullBreakdown = "Full Breakdown: (est)\n";
-      const allGames = [];
+      // GOLF FIRST if any
+      if (golfForDay.length > 0) {
+        golfForDay.forEach(g => {
+          fullBreakdown += `Golf - ${abbreviateGolfEvent(g.event)}\n`;
+        });
+      }
 
+      const allGames = [];
       mlbForDay.forEach(g => {
         const timeObj = parseTime(g.time);
         allGames.push({
@@ -365,7 +319,6 @@
           matchup: g.matchup
         });
       });
-
       wnbaForDay.forEach(g => {
         const timeObj = parseTime(g.time);
         allGames.push({
@@ -376,20 +329,8 @@
         });
       });
 
-      // Golf events have no time, so we use ?? and only include event name
-      golfForDay.forEach(g => {
-        allGames.push({
-          league: 'Golf',
-          time: "??",
-          timeObj: null,
-          matchup: g.event
-        });
-      });
-
-      // Sort by time (Golf always last)
+      // Sort by time (Golf is already handled)
       allGames.sort((a, b) => {
-        if (a.league === "Golf" && b.league !== "Golf") return 1;
-        if (b.league === "Golf" && a.league !== "Golf") return -1;
         if (!a.timeObj && !b.timeObj) return 0;
         if (!a.timeObj) return 1;
         if (!b.timeObj) return -1;
@@ -401,13 +342,9 @@
       allGames.forEach(game => {
         const timeKey = game.time || "??";
         if (!timeGroups[timeKey]) {
-          timeGroups[timeKey] = { MLB: 0, WNBA: 0, Golf: [] };
+          timeGroups[timeKey] = { MLB: 0, WNBA: 0 };
         }
-        if (game.league === "Golf") {
-          timeGroups[timeKey].Golf.push(game.matchup);
-        } else {
-          timeGroups[timeKey][game.league]++;
-        }
+        timeGroups[timeKey][game.league]++;
       });
 
       Object.keys(timeGroups).forEach(timeKey => {
@@ -422,14 +359,9 @@
           const countStr = group.WNBA > 1 ? ` (${group.WNBA})` : '';
           fullBreakdown += `WNBA${countStr} - ${formattedTime}\n`;
         }
-        if (group.Golf.length > 0) {
-          group.Golf.forEach(event => {
-            fullBreakdown += `Golf - ${event}\n`;
-          });
-        }
       });
 
-      if (allGames.length === 0) {
+      if (allGames.length === 0 && golfForDay.length === 0) {
         fullBreakdown += "No games found for this date.";
       }
 
@@ -441,20 +373,6 @@
       summaryContainer.classList.add("fade-in");
       fullContainer.classList.add("fade-in");
       status.style.display = "none";
-    }
-
-    function formatTimeForBreakdown(timeStr) {
-      if (!timeStr || timeStr === "??") return "??";
-      const timeObj = parseTime(timeStr);
-      if (!timeObj) return timeStr;
-      const h = timeObj.getHours();
-      const m = timeObj.getMinutes();
-      if (h === 0 && m === 0) return "12:00a";
-      if (h < 12) {
-        return h === 0 ? `12:${m.toString().padStart(2, '0')}a` : `${h}:${m.toString().padStart(2, '0')}a`;
-      } else {
-        return h === 12 ? `12:${m.toString().padStart(2, '0')}` : `${h - 12}:${m.toString().padStart(2, '0')}`;
-      }
     }
 
     function copyToClipboard(elementId) {
@@ -471,7 +389,6 @@
           button.style.transform = "scale(1)";
         }, 1000);
       }).catch(err => {
-        console.error('Failed to copy text: ', err);
         alert('Failed to copy to clipboard');
       });
     }
@@ -512,6 +429,20 @@
       if (period === "PM" && h < 12) h += 12;
       if (period === "AM" && h === 12) h = 0;
       return new Date(0, 0, 0, h, m);
+    }
+
+    function formatTimeForBreakdown(timeStr) {
+      if (!timeStr || timeStr === "??") return "??";
+      const timeObj = parseTime(timeStr);
+      if (!timeObj) return timeStr;
+      const h = timeObj.getHours();
+      const m = timeObj.getMinutes();
+      if (h === 0 && m === 0) return "12:00a";
+      if (h < 12) {
+        return h === 0 ? `12:${m.toString().padStart(2, '0')}a` : `${h}:${m.toString().padStart(2, '0')}a`;
+      } else {
+        return h === 12 ? `12:${m.toString().padStart(2, '0')}` : `${h - 12}:${m.toString().padStart(2, '0')}`;
+      }
     }
 
     function formatTime(date) {
