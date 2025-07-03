@@ -23,19 +23,17 @@
 
 <script>
 async function fetchScheduleFromWikipedia() {
+  const proxy = 'https://api.allorigins.win/raw?url=';
   const wikiURL = 'https://en.wikipedia.org/wiki/2025_WNBA_season';
 
   try {
-    // Wikipedia's CORS policy usually allows cross-origin fetch for pages
-    const response = await fetch(wikiURL);
+    const response = await fetch(proxy + encodeURIComponent(wikiURL));
     if (!response.ok) throw new Error('Failed to fetch Wikipedia page.');
 
     const htmlText = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
 
-    // Wikipedia has multiple tables; find the one with the schedule
-    // Usually the schedule table has class 'wikitable' and includes "Date", "Time", "Matchup" headers
     const tables = [...doc.querySelectorAll('table.wikitable')];
     let scheduleTable = null;
 
@@ -52,12 +50,11 @@ async function fetchScheduleFromWikipedia() {
     const tbody = document.querySelector('#schedule-table tbody');
     tbody.innerHTML = '';
 
-    // Iterate rows, skip header
     const rows = [...scheduleTable.querySelectorAll('tr')].slice(1);
 
     rows.forEach(row => {
       const cells = row.querySelectorAll('td');
-      if (cells.length < 3) return; // skip incomplete rows
+      if (cells.length < 3) return;
 
       const date = cells[0].innerText.trim();
       const time = cells[1].innerText.trim();
