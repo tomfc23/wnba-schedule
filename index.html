@@ -23,21 +23,45 @@
     .error {
       color: #ff6c6c;
     }
-    #output {
-      background: #181818;
-      padding: 20px;
-      border-radius: 8px;
+    table {
+      border-collapse: collapse;
+      width: 100%;
       margin-top: 20px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      word-break: break-all;
+      background: #181818;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #4CAF50;
+      color: #fff;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background: #222;
+    }
+    tr:hover {
+      background: #333;
     }
   </style>
 </head>
 <body>
-  <h1>WNBA 2025 Season Schedule (from Wikipedia) 5.2</h1>
+  <h1>WNBA 2025 Season Schedule (from Wikipedia) 5.1</h1>
   <div id="status">Loading schedule...</div>
-  <div id="output" style="display:none;"></div>
+  <table id="schedule-table" style="display:none;">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time (ET)</th>
+        <th>Matchup</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
 <script>
 function formatDate(dateStr) {
@@ -57,8 +81,8 @@ function formatDate(dateStr) {
 }
 
 function formatTime(timeStr) {
-  // Remove spaces and ensure AM/PM format
-  return timeStr.replace(/\s+/g, '');
+  // Keep time format clean with spaces
+  return timeStr.trim();
 }
 
 function formatMatchup(matchupStr) {
@@ -70,7 +94,8 @@ async function fetchScheduleFromWikipedia() {
   const proxy = 'https://api.allorigins.win/raw?url=';
   const wikiURL = 'https://en.wikipedia.org/wiki/2025_WNBA_season';
   const statusDiv = document.getElementById('status');
-  const outputDiv = document.getElementById('output');
+  const table = document.getElementById('schedule-table');
+  const tbody = table.querySelector('tbody');
 
   try {
     statusDiv.textContent = 'Loading schedule...';
@@ -108,7 +133,7 @@ async function fetchScheduleFromWikipedia() {
     
     if (!scheduleTable) throw new Error('Schedule table not found.');
 
-    let output = '';
+    tbody.innerHTML = '';
     let lastDate = '';
     let lastTime = '';
 
@@ -122,7 +147,9 @@ async function fetchScheduleFromWikipedia() {
         lastTime = formatTime(cells[1]);
         const matchup = formatMatchup(cells[2]);
         if (matchup) {
-          output += `${lastDate}${lastTime}${matchup}`;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
+          tbody.appendChild(tr);
         }
       }
 
@@ -131,14 +158,18 @@ async function fetchScheduleFromWikipedia() {
         lastTime = formatTime(cells[1]);
         const matchup = formatMatchup(cells[2]);
         if (matchup) {
-          output += `${lastDate}${lastTime}${matchup}`;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
+          tbody.appendChild(tr);
         }
       }
 
       // Handle row with only matchup (e.g., "Phoenix", "@", "Las Vegas")
       else if (cells.length === 3 && cells[1] === '@') {
         const matchup = `${cells[0]} at ${cells[2]}`;
-        output += `${lastDate}${lastTime}${matchup}`;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
+        tbody.appendChild(tr);
       }
       
       // Handle two-column format (Time, Matchup)
@@ -148,23 +179,24 @@ async function fetchScheduleFromWikipedia() {
           lastTime = formatTime(cells[0]);
           const matchup = formatMatchup(cells[1]);
           if (matchup) {
-            output += `${lastDate}${lastTime}${matchup}`;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
+            tbody.appendChild(tr);
           }
         }
       }
     });
 
-    if (output.trim() === '') {
+    if (tbody.children.length === 0) {
       throw new Error('No schedule data found in the expected format.');
     }
 
     statusDiv.style.display = 'none';
-    outputDiv.textContent = output;
-    outputDiv.style.display = 'block';
+    table.style.display = 'table';
     
   } catch (error) {
     statusDiv.innerHTML = `<span class="error">Error loading schedule: ${error.message}</span>`;
-    outputDiv.style.display = 'none';
+    table.style.display = 'none';
     console.error(error);
   }
 }
