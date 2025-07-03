@@ -183,8 +183,8 @@
   </style>
 </head>
 <body>
-  <h1>Schedule Breakdown 2.0</h1>
-  <h4>Now includes MLB, WNBA, and Golf schedules!</h4>
+  <h1>Schedule Breakdown w/ UFC 1.0</h1>
+  <h4>Now includes MLB, WNBA, Golf, and UFC schedules!</h4>
   <div class="controls">
     <input type="date" id="datePicker" />
     <button onclick="showSchedule()">Show Schedule</button>
@@ -207,9 +207,10 @@
     const mlbCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
     const wnbaCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTzPTKPPWRgmQ6cA4k-7jMtHuWffIDlvOxSmVrLVJV6xboTRuSxzxfFjKI7oWJUlx0DsT1fxr_7uI-j/pub?output=csv";
     const golfCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSAJavndRe-9tsv281xto4PhImuT52qPZPnF6aKCk7FI_eXbs3k_kzjnQzR5JVrXfrmm9ZcqCb58jNH/pub?output=csv";
+    const ufcCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhlTHGubZF_30ebVDajS2zayA_4zO_S6NFSiiftiABXnIqnWw7EZBQ8iT_BJsC8Izvwy_YTcKyU6-y/pub?output=csv";
 
-    let mlbGames = [], wnbaGames = [], golfGames = [];
-    let mlbLoaded = false, wnbaLoaded = false, golfLoaded = false;
+    let mlbGames = [], wnbaGames = [], golfGames = [], ufcEvents = [];
+    let mlbLoaded = false, wnbaLoaded = false, golfLoaded = false, ufcLoaded = false;
 
     window.onload = () => {
       document.getElementById("datePicker").valueAsDate = new Date();
@@ -245,8 +246,18 @@
       }
     });
 
+    Papa.parse(ufcCsvUrl, {
+      download: true, header: false, skipEmptyLines: true,
+      complete: function (results) {
+        ufcEvents = results.data.map(row => ({
+          date: row[0], event: row[1]
+        }));
+        ufcLoaded = true; checkReady();
+      }
+    });
+
     function checkReady() {
-      if (mlbLoaded && wnbaLoaded && golfLoaded) {
+      if (mlbLoaded && wnbaLoaded && golfLoaded && ufcLoaded) {
         document.getElementById("status").innerHTML = "✅ Schedule data loaded. Select a date to view games.";
       }
     }
@@ -265,7 +276,7 @@
       const summaryContainer = document.getElementById("summaryContainer");
       const fullContainer = document.getElementById("fullContainer");
 
-      if (!mlbLoaded || !wnbaLoaded || !golfLoaded) {
+      if (!mlbLoaded || !wnbaLoaded || !golfLoaded || !ufcLoaded) {
         status.innerHTML = '<div class="loading"></div>Please wait... still loading data.';
         summaryContainer.style.display = "none";
         fullContainer.style.display = "none";
@@ -285,6 +296,7 @@
       const mlbForDay = mlbGames.filter(g => matchDate(g.date, shortDate));
       const wnbaForDay = wnbaGames.filter(g => matchDate(g.date, shortDate));
       const golfForDay = golfGames.filter(g => matchDate(g.date, shortDate));
+      const ufcForDay = ufcEvents.filter(e => matchDate(e.date, shortDate));
 
       const mlbTime = getEarliestTime(mlbForDay);
       const wnbaTime = getEarliestTime(wnbaForDay);
@@ -298,7 +310,10 @@
       if (golfForDay.length > 0) {
         summary += `${golfForDay.length} Golf\n`;
       }
-      summary += `———————————————\n${mlbForDay.length + wnbaForDay.length + golfForDay.length} total events\n———————————————`;
+      if (ufcForDay.length > 0) {
+        summary += `${ufcForDay.length} UFC\n`;
+      }
+      summary += `———————————————\n${mlbForDay.length + wnbaForDay.length + golfForDay.length + ufcForDay.length} total events\n———————————————`;
 
       // --- Full Breakdown Section ---
       let fullBreakdown = "Full Breakdown: (est)\n";
@@ -306,6 +321,12 @@
       if (golfForDay.length > 0) {
         golfForDay.forEach(g => {
           fullBreakdown += `Golf - ${abbreviateGolfEvent(g.event)}\n`;
+        });
+      }
+      // UFC events next
+      if (ufcForDay.length > 0) {
+        ufcForDay.forEach(e => {
+          fullBreakdown += `UFC - ${e.event}\n`;
         });
       }
 
@@ -329,7 +350,7 @@
         });
       });
 
-      // Sort by time (Golf is already handled)
+      // Sort by time (Golf & UFC already handled)
       allGames.sort((a, b) => {
         if (!a.timeObj && !b.timeObj) return 0;
         if (!a.timeObj) return 1;
@@ -361,7 +382,7 @@
         }
       });
 
-      if (allGames.length === 0 && golfForDay.length === 0) {
+      if (allGames.length === 0 && golfForDay.length === 0 && ufcForDay.length === 0) {
         fullBreakdown += "No games found for this date.";
       }
 
