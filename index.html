@@ -44,7 +44,7 @@
   </style>
 </head>
 <body>
-  <h1>WNBA 2025 Season Schedule (from Wikipedia) 4.0</h1>
+  <h1>WNBA 2025 Season Schedule (from Wikipedia) 5.0</h1>
   <div id="status">Loading schedule...</div>
   <table id="schedule-table" style="display:none;">
     <thead>
@@ -69,7 +69,7 @@ async function fetchScheduleFromWikipedia() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
 
-    // Find the regular season table (adjust this if the structure changes)
+    // Find the appropriate table
     const tables = Array.from(doc.querySelectorAll('table.wikitable'));
     let scheduleTable = null;
     for (const t of tables) {
@@ -81,40 +81,42 @@ async function fetchScheduleFromWikipedia() {
     }
     if (!scheduleTable) throw new Error('Schedule table not found.');
 
-    // Parse table rows
     tbody.innerHTML = '';
     let lastDate = '';
+    let lastTime = '';
+
     Array.from(scheduleTable.querySelectorAll('tr')).slice(1).forEach(row => {
-      const cells = Array.from(row.querySelectorAll('td'));
-      if (cells.length < 3) return;
+      const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+      if (cells.length === 0) return;
 
-      // Date logic
-      let date = cells[0].textContent.trim();
-      if (date) lastDate = date;
-      else date = lastDate;
-
-      // Some rows have multiple games per date, with time & matchup but no date.
-      let time = cells[1].textContent.trim();
-      let matchup = cells[2].textContent.trim();
-
-      // Some rows may have matchups split across 2-3 cells with "@" in the middle
-      // e.g. [Chicago] [@] [Minnesota] => Chicago @ Minnesota
-      if (matchup === '@' && cells[1].textContent.trim() && cells[3]) {
-        matchup = `${cells[1].textContent.trim()} @ ${cells[3].textContent.trim()}`;
-        time = ''; // No time in this pattern
-      } else if (cells.length >= 4 && cells[3].textContent.trim() === '@') {
-        // e.g. [Chicago] [@] [Minnesota] in cells 2,3,4
-        matchup = `${cells[2].textContent.trim()} @ ${cells[4].textContent.trim()}`;
-        time = cells[1].textContent.trim();
-      } else if (cells.length >= 4 && cells[3].textContent.trim() && cells[2].textContent.trim() === '@') {
-        matchup = `${cells[1].textContent.trim()} @ ${cells[3].textContent.trim()}`;
-        time = '';
+      // Handle full row (Date, Time, Matchup)
+      if (cells.length >= 3 && cells[0] && cells[1] && cells[2]) {
+        lastDate = cells[0];
+        lastTime = cells[1];
+        const matchup = cells[2];
+        if (matchup) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
+          tbody.appendChild(tr);
+        }
       }
 
-      // Only output if we have at least date, and matchup or time
-      if (date && (time || matchup)) {
+      // Handle row with blank date, but time and matchup present
+      else if (cells.length >= 3 && !cells[0] && cells[1] && cells[2]) {
+        lastTime = cells[1];
+        const matchup = cells[2];
+        if (matchup) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
+          tbody.appendChild(tr);
+        }
+      }
+
+      // Handle row with only matchup (e.g., "Phoenix", "@", "Las Vegas" or "Chicago", "@", "Minnesota")
+      else if (cells.length === 3 && cells[1] === '@') {
+        const matchup = `${cells[0]} @ ${cells[2]}`;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${date}</td><td>${time}</td><td>${matchup}</td>`;
+        tr.innerHTML = `<td>${lastDate}</td><td>${lastTime}</td><td>${matchup}</td>`;
         tbody.appendChild(tr);
       }
     });
