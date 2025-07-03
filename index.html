@@ -40,7 +40,7 @@
     </style>
 </head>
 <body>
-    <h1>MLB & WNBA Schedule Viewer 3.0</h1>
+    <h1>MLB & WNBA Schedule Viewer 3.1</h1>
     
     <div>
         <input type="date" id="datePicker" />
@@ -52,63 +52,40 @@
     <script>
         const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTV0ITDll09moWFzxf29ma1yYwwuFoayx6La0Nm8ej_5MtjRh6s2GFqif2GEVR-hsBsy8cp8RqvJtzQ/pub?output=csv";
         let games = [];
-        let columns = { mlb: {}, wnba: {} };
+        const columns = {
+            mlb: { date: "MLB Date", time: "MLB Time", matchup: "MLB Matchup" },
+            wnba: { date: "WNBA Date", time: "WNBA Time", matchup: "WNBA Matchup" }
+        };
 
         Papa.parse(csvUrl, {
             download: true,
             header: true,
+            skipEmptyLines: true,
             complete: function (results) {
-                games = results.data;
-                console.log("Raw data:", games[0]); // Debug log
-                detectColumns(games[0]);
-                console.log("Detected columns:", columns); // Debug log
+                // Remove completely empty rows
+                games = results.data.filter(row => Object.values(row).some(val => val && val.trim() !== ""));
+                if (games.length === 0) {
+                    document.getElementById("output").innerText = "No schedule data loaded.";
+                }
+            },
+            error: function (err) {
+                document.getElementById("output").innerText = "Failed to load schedule data.";
             }
         });
 
-        // Updated column detection for new header names
-        function detectColumns(row) {
-            const keys = Object.keys(row);
-            console.log("All column keys:", keys); // Debug log
-            
-            // MLB columns (updated names)
-            columns.mlb = {
-                date: "MLB Date",
-                time: "MLB Time", 
-                matchup: "MLB Matchup"
-            };
-            
-            // WNBA columns (updated names)
-            columns.wnba = {
-                date: "WNBA Date",
-                time: "WNBA Time",
-                matchup: "WNBA Matchup"
-            };
-        }
-
         function showSchedule() {
             const inputDate = document.getElementById("datePicker").value;
-            if (!inputDate) return;
+            if (!inputDate) {
+                document.getElementById("output").innerText = "Please select a date.";
+                return;
+            }
 
             const dateStr = formatToShortDate(inputDate);
             const selectedDate = new Date(inputDate);
-            
-            console.log("Looking for date:", dateStr); // Debug log
-            
-            // Filter games for the selected date
-            const mlbGames = games.filter(g => {
-                const gameDate = g[columns.mlb.date];
-                console.log("MLB game date:", gameDate, "matches:", gameDate === dateStr);
-                return gameDate === dateStr;
-            });
-            
-            const wnbaGames = games.filter(g => {
-                const gameDate = g[columns.wnba.date];
-                console.log("WNBA game date:", gameDate, "matches:", gameDate === dateStr);
-                return gameDate === dateStr;
-            });
 
-            console.log("MLB games found:", mlbGames.length);
-            console.log("WNBA games found:", wnbaGames.length);
+            // Filter games for the selected date
+            const mlbGames = games.filter(g => normalizeDate(g[columns.mlb.date]) === dateStr);
+            const wnbaGames = games.filter(g => normalizeDate(g[columns.wnba.date]) === dateStr);
 
             const mlbTime = getEarliestTime(mlbGames, columns.mlb.time);
             const wnbaTime = getEarliestTime(wnbaGames, columns.wnba.time);
@@ -116,28 +93,49 @@
             const formattedDate = selectedDate.toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "numeric",
-                day: "numeric"
+                day: "numeric",
+                year: "numeric"
             });
 
-            const summary = [
-                `Games on ${formattedDate}:`,
-                `———————————————`,
-                `${mlbGames.length} MLB ${mlbTime ? `(${mlbTime})` : ''}`,
-                `${wnbaGames.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}`,
-                `———————————————`,
-                `${mlbGames.length + wnbaGames.length} total games`,
-                `———————————————`
-            ].join("\n");
+            let summary = `Games on ${formattedDate}:\n———————————————\n`;
+            summary += `${mlbGames.length} MLB ${mlbTime ? `(${mlbTime})` : ''}\n`;
+            summary += `${wnbaGames.length} WNBA ${wnbaTime ? `(${wnbaTime})` : ''}\n`;
+            summary += `———————————————\n${mlbGames.length + wnbaGames.length} total games\n———————————————`;
+
+            if (mlbGames.length > 0) {
+                summary += `\n\nMLB Games:\n`;
+                mlbGames.forEach(g => {
+                    summary += `• ${g[columns.mlb.time] || "??"} — ${g[columns.mlb.matchup] || "[Matchup missing]"}\n`;
+                });
+            }
+            if (wnbaGames.length > 0) {
+                summary += `\nWNBA Games:\n`;
+                wnbaGames.forEach(g => {
+                    summary += `• ${g[columns.wnba.time] || "??"} — ${g[columns.wnba.matchup] || "[Matchup missing]"}\n`;
+                });
+            }
+            if (mlbGames.length === 0 && wnbaGames.length === 0) {
+                summary += `\nNo games found for this date.`;
+            }
 
             document.getElementById("output").innerText = summary;
         }
 
+        // Format as M/D/YY to match CSV export (removes leading zeroes)
         function formatToShortDate(dateStr) {
             const d = new Date(dateStr);
             const mm = d.getMonth() + 1;
             const dd = d.getDate();
             const yy = d.getFullYear().toString().slice(2);
             return `${mm}/${dd}/${yy}`;
+        }
+
+        // Handles leading zeros and inconsistent formats in CSV data
+        function normalizeDate(dateVal) {
+            if (!dateVal) return "";
+            const d = new Date(dateVal);
+            if (d.toString() === "Invalid Date") return (dateVal + "").trim(); // fallback to raw string
+            return formatToShortDate(d.toISOString().slice(0,10));
         }
 
         function getEarliestTime(gameList, timeKey) {
@@ -148,11 +146,17 @@
             return validTimes.length ? formatTime(validTimes[0]) : null;
         }
 
+        // Robust time parsing: accepts "7:00 PM", "7:00PM", "07:00PM" (case-insensitive)
         function parseTime(str) {
-            if (!str || !str.includes(":")) return null;
-            const [time, period] = str.trim().split(" ");
-            if (!time || !period) return null;
-            let [h, m] = time.split(":").map(Number);
+            if (!str) return null;
+            const match = (str.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])$/) ||
+                           str.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])\.?$/) ||
+                           str.trim().match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])$/) ||
+                           str.trim().match(/^(\d{1,2}):(\d{2})([APap][Mm])$/));
+            if (!match) return null;
+            let h = Number(match[1]);
+            let m = Number(match[2]);
+            let period = match[3].toUpperCase();
             if (period === "PM" && h < 12) h += 12;
             if (period === "AM" && h === 12) h = 0;
             return new Date(0, 0, 0, h, m);
