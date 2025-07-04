@@ -408,21 +408,57 @@
     // --- Utility functions ---
     function copyToClipboard(elementId) {
       const text = document.getElementById(elementId).innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        const button = event.target;
-        const originalText = button.innerText;
-        button.innerText = "✅ Copied!";
-        button.style.background = "linear-gradient(45deg, #10b981, #059669)";
-        button.style.transform = "scale(0.95)";
-        setTimeout(() => {
-          button.innerText = originalText;
-          button.style.background = "linear-gradient(45deg, #10b981, #059669)";
-          button.style.transform = "scale(1)";
-        }, 1000);
-      }).catch(err => {
-        alert('Failed to copy to clipboard');
-      });
+      const button = event.target;
+      const originalText = button.innerText;
+      
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showCopySuccess(button, originalText);
+        }).catch(() => {
+          // Fall back to legacy method
+          fallbackCopyToClipboard(text, button, originalText);
+        });
+      } else {
+        // Use legacy method directly
+        fallbackCopyToClipboard(text, button, originalText);
+      }
     }
+    
+    function fallbackCopyToClipboard(text, button, originalText) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        showCopySuccess(button, originalText);
+      } catch (err) {
+        showCopyError();
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+    
+    function showCopySuccess(button, originalText) {
+      button.innerText = "✅ Copied!";
+      button.style.background = "linear-gradient(45deg, #10b981, #059669)";
+      button.style.transform = "scale(0.95)";
+      setTimeout(() => {
+        button.innerText = originalText;
+        button.style.background = "linear-gradient(45deg, #10b981, #059669)";
+        button.style.transform = "scale(1)";
+      }, 1000);
+    }
+    
+    function showCopyError() {
+      alert('Failed to copy to clipboard. Please try selecting and copying the text manually.');
+    }
+    
     function formatShortDate(date) {
       const m = date.getMonth() + 1;
       const d = date.getDate();
