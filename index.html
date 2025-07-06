@@ -184,7 +184,7 @@
 </head>
 <body>
   <h1>Schedule Breakdown</h1>
-  <h4>DM @tomfc on real for glitches/mistakes</h4>
+  <h4>DM @tomfc on real for glitches/mistakes.</h4>
   <div class="controls">
     <input type="date" id="datePicker" />
     <button onclick="showSchedule()">Show Schedule</button>
@@ -348,6 +348,10 @@ const nbaTime = getEarliestTime(nbaForDay);
         summary += `${wnbaForDay.length} WNBA${wnbaTime ? ` (${formatTimeDisplay(wnbaTime, showPST)})` : ''}\n`;
         total += wnbaForDay.length;
       }
+       if (nbaForDay.length > 0) {
+  summary += `${nbaForDay.length} NBA${nbaTime ? ` (${formatTimeDisplay(nbaTime, showPST)})` : ''}\n`;
+  total += nbaForDay.length;
+}
       if (golfForDay.length > 0) {
         summary += `${golfForDay.length} Golf\n`;
         total += golfForDay.length;
@@ -356,10 +360,7 @@ const nbaTime = getEarliestTime(nbaForDay);
         summary += `${ufcForDay.length} UFC\n`;
         total += ufcForDay.length;
       }
-      if (nbaForDay.length > 0) {
-  summary += `${nbaForDay.length} NBA${nbaTime ? ` (${formatTimeDisplay(nbaTime, showPST)})` : ''}\n`;
-  total += nbaForDay.length;
-}
+     
       summary += `———————————————\n${total} total games\n———————————————`;
 
       // --- Full Breakdown Section (only "h:mm" times, no AM/PM, no 24h) ---
