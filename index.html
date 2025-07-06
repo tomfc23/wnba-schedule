@@ -213,6 +213,9 @@
     const wnbaCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTzPTKPPWRgmQ6cA4k-7jMtHuWffIDlvOxSmVrLVJV6xboTRuSxzxfFjKI7oWJUlx0DsT1fxr_7uI-j/pub?output=csv";
     const golfCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSAJavndRe-9tsv281xto4PhImuT52qPZPnF6aKCk7FI_eXbs3k_kzjnQzR5JVrXfrmm9ZcqCb58jNH/pub?output=csv";
     const ufcCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhlTHGubZF_30ebVDajS2zayA_4zO_S6NFSiiftiABXnIqnWw7EZBQ8iT_BJsC8Izvwy_YTcKyU6-y/pub?output=csv";
+    const nbaCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSUUEEZc_Gsp0dpTzQ_1pJKIa08NAW0s9sH1vnhwZOAXxVHwpaamZ36xghWdyhiyIQGq0RKV3H1cyr9/pub?output=csv";
+    let nbaGames = [];
+    let nbaLoaded = false;
     let mlbGames = [], wnbaGames = [], golfGames = [], ufcEvents = [];
     let mlbLoaded = false, wnbaLoaded = false, golfLoaded = false, ufcLoaded = false;
 
@@ -256,12 +259,23 @@
         ufcLoaded = true; checkReady();
       }
     });
+    Papa.parse(nbaCsvUrl, {
+  download: true, header: true, skipEmptyLines: true,
+  complete: function (results) {
+    nbaGames = results.data.map(row => ({
+      date: row["Date"], time: row["Time"], matchup: row["Matchup"]
+    }));
+    nbaLoaded = true;
+    checkReady();
+  }
+});
+
 
     function checkReady() {
-      if (mlbLoaded && wnbaLoaded && golfLoaded && ufcLoaded) {
-        document.getElementById("status").innerHTML = "✅ Schedule data loaded. Select a date to view games.";
-      }
-    }
+  if (mlbLoaded && wnbaLoaded && golfLoaded && ufcLoaded && nbaLoaded) {
+    document.getElementById("status").innerHTML = "✅ Schedule data loaded. Select a date to view games.";
+  }
+}
 
     function abbreviateGolfEvent(eventName) {
       if (!eventName) return "";
@@ -312,6 +326,11 @@
       const wnbaForDay = wnbaGames.filter(g => matchDate(g.date, shortDate));
       const golfForDay = golfGames.filter(g => matchDate(g.date, shortDate));
       const ufcForDay = ufcEvents.filter(e => matchDate(e.date, shortDate));
+      const nbaForDay = nbaGames.filter(g => matchDate(g.date, selectedDate.toLocaleDateString("en-US", {
+  year: "numeric", month: "long", day: "numeric"
+})));
+const nbaTime = getEarliestTime(nbaForDay);
+
 
       const mlbTime = getEarliestTime(mlbForDay);
       const wnbaTime = getEarliestTime(wnbaForDay);
@@ -337,6 +356,10 @@
         summary += `${ufcForDay.length} UFC\n`;
         total += ufcForDay.length;
       }
+      if (nbaForDay.length > 0) {
+  summary += `${nbaForDay.length} NBA${nbaTime ? ` (${formatTimeDisplay(nbaTime, showPST)})` : ''}\n`;
+  total += nbaForDay.length;
+}
       summary += `———————————————\n${total} total games\n———————————————`;
 
       // --- Full Breakdown Section (only "h:mm" times, no AM/PM, no 24h) ---
@@ -360,6 +383,11 @@
         const timeObj = parseTime(g.time);
         allGames.push({ league: 'WNBA', time: g.time || "", timeObj: timeObj, matchup: g.matchup });
       });
+      nbaForDay.forEach(g => {
+  const timeObj = parseTime(g.time);
+  allGames.push({ league: 'NBA', time: g.time || "", timeObj: timeObj, matchup: g.matchup });
+});
+
       allGames.sort((a, b) => {
         if (!a.timeObj && !b.timeObj) return 0;
         if (!a.timeObj) return 1;
@@ -369,7 +397,7 @@
       const timeGroups = {};
       allGames.forEach(game => {
         const timeKey = game.time || "??";
-        if (!timeGroups[timeKey]) timeGroups[timeKey] = { MLB: 0, WNBA: 0 };
+        if (!timeGroups[timeKey]) timeGroups[timeKey] = { MLB: 0, WNBA: 0, NBA: 0 };
         timeGroups[timeKey][game.league]++;
       });
       Object.keys(timeGroups).forEach(timeKey => {
@@ -383,6 +411,10 @@
           const countStr = group.WNBA > 1 ? ` (${group.WNBA})` : '';
           fullBreakdown += `WNBA${countStr} - ${formattedTime}\n`;
         }
+        if (group.NBA > 0) {
+  const countStr = group.NBA > 1 ? ` (${group.NBA})` : '';
+  fullBreakdown += `NBA${countStr} - ${formattedTime}\n`;
+}
       });
       if (allGames.length === 0 && golfForDay.length === 0 && ufcForDay.length === 0) {
         fullBreakdown += "No games found for this date.";
