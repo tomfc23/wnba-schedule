@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sports Schedule Hub</title>
+    <title>Real Sports Schedule</title>
     <style>
         * {
             margin: 0;
@@ -13,118 +13,119 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             min-height: 100vh;
-            color: #333;
+            color: #000000;
+            line-height: 1.5;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
-            color: white;
+            margin-bottom: 60px;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 30px;
         }
 
         .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+            color: #000000;
+            letter-spacing: -0.02em;
         }
 
         .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+            font-size: 0.95rem;
+            color: #666666;
+            font-weight: 300;
         }
 
         .controls {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            background: #fafafa;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 24px;
+            margin-bottom: 40px;
         }
 
         .control-group {
             display: flex;
             gap: 20px;
-            align-items: center;
+            align-items: end;
             flex-wrap: wrap;
-            justify-content: center;
         }
 
         .control-item {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .control-item label {
-            font-weight: 600;
-            color: #4a5568;
+            font-weight: 400;
+            color: #333333;
             font-size: 0.9rem;
         }
 
         .date-input {
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
+            padding: 8px 12px;
+            border: 1px solid #cccccc;
+            border-radius: 3px;
+            font-size: 0.95rem;
             background: white;
-            transition: border-color 0.3s ease;
+            color: #000000;
+            font-family: inherit;
         }
 
         .date-input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #0066cc;
         }
 
         .fetch-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #48bb78, #38a169);
+            padding: 9px 20px;
+            background: #000000;
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 3px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            font-weight: 400;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: background-color 0.2s ease;
         }
 
         .fetch-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+            background: #333333;
         }
 
         .fetch-btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
-            color: white;
-            font-size: 1.2rem;
+            padding: 60px 20px;
+            color: #666666;
+            font-size: 0.95rem;
         }
 
         .spinner {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255,255,255,0.3);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e5e5;
             border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 15px;
+            border-top-color: #0066cc;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
         }
 
         @keyframes spin {
@@ -132,90 +133,94 @@
         }
 
         .error {
-            background: rgba(245, 101, 101, 0.1);
-            border: 1px solid #f56565;
-            color: #c53030;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
+            background: #f8f8f8;
+            border: 1px solid #cccccc;
+            color: #000000;
+            padding: 16px;
+            border-radius: 3px;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
         }
 
         .schedule-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            overflow: hidden;
         }
 
-        .schedule-output {
-            font-family: 'Courier New', monospace;
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+        .schedule-output, .breakdown-output {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+            background: #fafafa;
+            color: #000000;
+            padding: 20px;
             white-space: pre-wrap;
-            font-size: 14px;
+            font-size: 0.85rem;
             line-height: 1.6;
             overflow-x: auto;
+            border-bottom: 1px solid #e5e5e5;
         }
 
         .breakdown-output {
-            font-family: 'Courier New', monospace;
-            background: #1a202c;
-            color: #cbd5e0;
-            padding: 25px;
-            border-radius: 12px;
-            white-space: pre-wrap;
-            font-size: 14px;
-            line-height: 1.6;
-            overflow-x: auto;
+            background: #f5f5f5;
+            border-bottom: none;
         }
 
         .copy-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #0066cc;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 6px 12px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            font-family: inherit;
+            margin: 16px 20px 0 20px;
+            transition: background-color 0.2s ease;
         }
 
         .copy-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            background: #0052a3;
         }
 
         .no-games {
             text-align: center;
-            padding: 60px 20px;
-            color: #718096;
+            padding: 80px 20px;
+            color: #666666;
         }
 
         .no-games-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.5;
+            font-size: 2rem;
+            margin-bottom: 16px;
+            opacity: 0.3;
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+            
+            .header {
+                margin-bottom: 40px;
+            }
+            
             .header h1 {
-                font-size: 2rem;
+                font-size: 1.75rem;
             }
             
             .control-group {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 16px;
+            }
+            
+            .control-item {
+                align-items: stretch;
             }
             
             .schedule-output, .breakdown-output {
-                font-size: 12px;
-                padding: 20px;
+                font-size: 0.8rem;
+                padding: 16px;
             }
         }
     </style>
@@ -223,43 +228,43 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏆 Sports Schedule Hub</h1>
-            <p>Get all sports schedules in one consolidated view</p>
+            <h1>Real Sports Schedule</h1>
+            <p>‼️DOES NOT YET SUPPORT GOLF‼️</p><br>
+            <p>dm @tomfc for problems</p>
         </div>
 
         <div class="controls">
             <div class="control-group">
                 <div class="control-item">
-                    <label for="dateInput">Select Date</label>
+                    <label for="dateInput">Date</label>
                     <input type="date" id="dateInput" class="date-input">
                 </div>
                 
                 <div class="control-item">
-                    <label>&nbsp;</label>
-                    <button id="fetchBtn" class="fetch-btn">📅 Get All Sports Schedule</button>
+                    <button id="fetchBtn" class="fetch-btn">Get Schedule</button>
                 </div>
             </div>
         </div>
 
         <div id="loading" class="loading" style="display: none;">
             <div class="spinner"></div>
-            <div>Loading schedules for all sports...</div>
+            <div>Loading schedules...</div>
         </div>
 
         <div id="error" class="error" style="display: none;"></div>
 
         <div id="scheduleContainer" class="schedule-container" style="display: none;">
-            <button class="copy-btn" onclick="copyToClipboard('summaryOutput')">📋 Copy Summary</button>
+            <button class="copy-btn" onclick="copyToClipboard('summaryOutput')">Copy Summary</button>
             <div id="summaryOutput" class="schedule-output"></div>
             
-            <button class="copy-btn" onclick="copyToClipboard('breakdownOutput')">📋 Copy Full Breakdown</button>
+            <button class="copy-btn" onclick="copyToClipboard('breakdownOutput')">Copy Breakdown</button>
             <div id="breakdownOutput" class="breakdown-output"></div>
         </div>
     </div>
 
     <script>
         const API_BASE = 'https://schedule.tommyek67.workers.dev/';
-        const SPORTS = ['mlb', 'nfl', 'wnba', 'ufc']; // Excluding golf as requested
+        const SPORTS = ['mlb', 'nfl', 'wnba', 'ufc'];
 
         // Set default date to today
         document.getElementById('dateInput').valueAsDate = new Date();
@@ -492,10 +497,10 @@
                 // Visual feedback
                 const btn = event.target;
                 const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
+                btn.textContent = 'Copied';
                 setTimeout(() => {
                     btn.textContent = originalText;
-                }, 2000);
+                }, 1500);
             }).catch(err => {
                 console.error('Failed to copy: ', err);
             });
