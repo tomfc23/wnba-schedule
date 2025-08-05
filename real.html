@@ -49,54 +49,63 @@
   <div id="games"></div>
 
   <script>
-    async function loadSchedule() {
-      try {
-        const response = await fetch("https://schedule.tommyek67.workers.dev/");
-        const data = await response.json();
+  async function loadSchedule() {
+    try {
+      const response = await fetch("https://schedule.tommyek67.workers.dev/");
+      const data = await response.json();
 
-        const today = new Date().toISOString().split('T')[0]; // e.g. "2025-08-05"
-        const games = data.latestDayContent?.games || [];
+      // Get today's date in America/New_York (EST/EDT)
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const parts = formatter.formatToParts(new Date());
+      const today = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
 
-        const container = document.getElementById('games');
-        container.innerHTML = '';
+      const games = data.latestDayContent?.games || [];
+      const container = document.getElementById('games');
+      container.innerHTML = '';
 
-        if (data.latestDay !== today || games.length === 0) {
-          container.innerHTML = "<p>No games scheduled today.</p>";
-          return;
-        }
-
-        games.forEach(game => {
-          const home = game.homeTeam;
-          const away = game.awayTeam;
-          const displayTime = game.display?.primary || 'TBD';
-
-          const div = document.createElement('div');
-          div.className = 'game';
-
-          div.innerHTML = `
-            <div class="teams">
-              <div>
-                ${away.displayName}
-                <div class="record">${game.awayWins}-${game.awayLosses}</div>
-              </div>
-              <div>at</div>
-              <div>
-                ${home.displayName}
-                <div class="record">${game.homeWins}-${game.homeLosses}</div>
-              </div>
-            </div>
-            <div class="time">Start Time: ${displayTime}</div>
-          `;
-
-          container.appendChild(div);
-        });
-      } catch (err) {
-        console.error('Failed to load schedule:', err);
-        document.getElementById('games').innerHTML = "<p>Error loading schedule.</p>";
+      if (data.latestDay !== today || games.length === 0) {
+        container.innerHTML = "<p>No games scheduled today.</p>";
+        return;
       }
-    }
 
-    loadSchedule();
-  </script>
+      games.forEach(game => {
+        const home = game.homeTeam;
+        const away = game.awayTeam;
+        const displayTime = game.display?.primary || 'TBD';
+
+        const div = document.createElement('div');
+        div.className = 'game';
+
+        div.innerHTML = `
+          <div class="teams">
+            <div>
+              ${away.displayName}
+              <div class="record">${game.awayWins}-${game.awayLosses}</div>
+            </div>
+            <div>at</div>
+            <div>
+              ${home.displayName}
+              <div class="record">${game.homeWins}-${game.homeLosses}</div>
+            </div>
+          </div>
+          <div class="time">Start Time: ${displayTime}</div>
+        `;
+
+        container.appendChild(div);
+      });
+    } catch (err) {
+      console.error('Failed to load schedule:', err);
+      document.getElementById('games').innerHTML = "<p>Error loading schedule.</p>";
+    }
+  }
+
+  loadSchedule();
+</script>
+
 </body>
 </html>
