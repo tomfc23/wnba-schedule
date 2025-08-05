@@ -128,24 +128,37 @@
           // Golf and UFC have different structures
           if (sport === 'golf') {
             // Golf tournaments have title in metadata
-            console.log('Golf game metadata:', game.metadata);
-            console.log('Golf game full object:', game);
+            console.log('Golf game object:', game);
+            console.log('Golf metadata exists:', !!game.metadata);
+            console.log('Golf metadata:', game.metadata);
+            console.log('Golf title from metadata:', game.metadata?.title);
             
-            const title = game.metadata?.title || 
-                         game.title || 
-                         game.name || 
-                         game.event || 
-                         game.description || 
-                         'Golf Tournament';
+            let title = 'Golf Tournament'; // default
+            
+            // Try multiple ways to access the title
+            if (game.metadata && game.metadata.title) {
+              title = game.metadata.title;
+              console.log('Found title in metadata.title:', title);
+            } else if (game.title) {
+              title = game.title;
+              console.log('Found title in game.title:', title);
+            } else if (game.name) {
+              title = game.name;
+              console.log('Found title in game.name:', title);
+            } else {
+              console.log('No title found, using default');
+            }
+            
             const venue = game.metadata?.subtitleFragments?.[0] || '';
+            console.log('Venue found:', venue);
             
             matchup = title;
             if (venue) {
               additionalInfo = venue;
             }
             
-            console.log('Golf matchup result:', matchup);
-            console.log('Golf venue result:', venue);
+            console.log('Final golf matchup:', matchup);
+            console.log('Final golf additionalInfo:', additionalInfo);
           } else {
             // UFC events
             matchup = game.name || game.title || game.event || game.description || 'UFC Event';
