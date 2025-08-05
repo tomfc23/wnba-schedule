@@ -1,628 +1,563 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>All Next Games</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-    }
-    button {
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      margin-bottom: 1rem;
-    }
-    .result {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #f4f4f4;
-      border-radius: 6px;
-    }
-    h2 {
-      margin-top: 2rem;
-      font-size: 1.2rem;
-      color: #333;
-    }
-    .game {
-      margin: 0.5rem 0;
-      padding: 0.5rem;
-      background: white;
-      border-radius: 4px;
-    }
-    .matchup {
-      font-weight: bold;
-    }
-    .time {
-      color: #666;
-      font-size: 0.9rem;
-    }
-    .error {
-      color: red;
-      font-style: italic;
-    }
-    .debug {
-      font-size: 0.8rem;
-      color: #999;
-      margin-top: 0.25rem;
-    }
-    .calendar-container {
-      margin: 1rem 0;
-      padding: 1rem;
-      background: #f9f9f9;
-      border-radius: 6px;
-      max-width: 400px;
-    }
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    .calendar-nav {
-      background: #007cba;
-      color: white;
-      border: none;
-      padding: 0.5rem;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    .calendar-nav:hover {
-      background: #005a87;
-    }
-    .calendar-title {
-      font-weight: bold;
-      font-size: 1.1rem;
-    }
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-    }
-    .calendar-day-header {
-      text-align: center;
-      font-weight: bold;
-      padding: 0.5rem;
-      background: #e0e0e0;
-      font-size: 0.8rem;
-    }
-    .calendar-day {
-      text-align: center;
-      padding: 0.5rem;
-      cursor: pointer;
-      background: white;
-      border: 1px solid #ddd;
-      min-height: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .calendar-day:hover {
-      background: #f0f0f0;
-    }
-    .calendar-day.other-month {
-      color: #ccc;
-      background: #f8f8f8;
-    }
-    .calendar-day.has-games {
-      background: #e3f2fd;
-      font-weight: bold;
-      color: #1976d2;
-    }
-    .calendar-day.selected {
-      background: #007cba;
-      color: white;
-    }
-    .calendar-day.today {
-      border: 2px solid #ff9800;
-    }
-    .filter-controls {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Schedule Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-item label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .sport-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sport-btn {
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sport-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .sport-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .date-input {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .fetch-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .fetch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .fetch-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(245, 101, 101, 0.1);
+            border: 1px solid #f56565;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .schedule-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .schedule-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .schedule-date {
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .game-time {
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .team-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .team-record {
+            font-size: 0.85rem;
+            color: #718096;
+        }
+
+        .vs {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #a0aec0;
+            margin: 0 15px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .betting-info {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .no-games {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .no-games-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .sport-buttons {
+                justify-content: center;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .schedule-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Fetch Next Games for All Sports</h1>
-  <div class="filter-controls">
-    <button onclick="fetchAllSports()">Fetch All</button>
-    <button onclick="clearDateFilter()" style="background: #666;">Show All Dates</button>
-  </div>
-  
-  <div class="calendar-container" id="calendarContainer" style="display: none;">
-    <div class="calendar-header">
-      <button class="calendar-nav" onclick="previousMonth()">‹</button>
-      <div class="calendar-title" id="calendarTitle"></div>
-      <button class="calendar-nav" onclick="nextMonth()">›</button>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Sports Schedule Hub</h1>
+            <p>Your ultimate destination for live sports schedules</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="control-item">
+                    <label>Select Sport</label>
+                    <div class="sport-buttons">
+                        <button class="sport-btn active" data-sport="mlb">⚾ MLB</button>
+                        <button class="sport-btn" data-sport="nfl">🏈 NFL</button>
+                        <button class="sport-btn" data-sport="wnba">🏀 WNBA</button>
+                        <button class="sport-btn" data-sport="ufc">🥊 UFC</button>
+                        <button class="sport-btn" data-sport="golf">⛳ Golf</button>
+                    </div>
+                </div>
+                
+                <div class="control-item">
+                    <label for="dateInput">Select Date</label>
+                    <input type="date" id="dateInput" class="date-input">
+                </div>
+                
+                <div class="control-item">
+                    <label>&nbsp;</label>
+                    <button id="fetchBtn" class="fetch-btn">📅 Get Schedule</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div>Loading schedule...</div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="scheduleContainer" class="schedule-container" style="display: none;">
+            <div class="schedule-header">
+                <div class="schedule-title" id="scheduleTitle"></div>
+                <div class="schedule-date" id="scheduleDate"></div>
+            </div>
+            <div id="gamesGrid" class="games-grid"></div>
+        </div>
     </div>
-    <div class="calendar-grid" id="calendarGrid"></div>
-  </div>
-  
-  <div id="results"></div>
-  <script>
-    const sports = ['mlb', 'nfl', 'wnba', 'golf', 'ufc']
-    const workerURL = 'https://schedule.tommyek67.workers.dev/' // update if needed
-    
-    let allGamesData = []; // Store all games data for filtering
-    let availableDates = new Set(); // Store dates that have games
-    let currentCalendarDate = new Date(); // Current month/year being displayed
-    let selectedDate = null; // Currently selected date
-    
-    function formatGameData(data, sport) {
-      console.log(`Processing ${sport} data:`, data);
-      
-      // Handle different response structures
-      let games = [];
-      
-      if (data && typeof data === 'object') {
-        // Check if it's the format with latestDayContent (MLB/NFL)
-        if (data.latestDayContent && data.latestDayContent.games) {
-          games = data.latestDayContent.games;
-        }
-        // Check if it's a direct array
-        else if (Array.isArray(data)) {
-          games = data;
-        }
-        // Check if it has a games property
-        else if (data.games && Array.isArray(data.games)) {
-          games = data.games;
-        }
-        // Check if it has events property (for golf/UFC)
-        else if (data.events && Array.isArray(data.events)) {
-          games = data.events;
-        }
-        else {
-          console.warn(`Unknown data structure for ${sport}:`, data);
-          return 'Unknown data format - check console';
-        }
-      }
-      
-      if (!games || games.length === 0) {
-        return 'No games found';
-      }
-      
-      return games.map(game => {
-        let matchup = '';
-        let startTime = '';
-        let additionalInfo = '';
-        
-        // Handle different sports data structures
-        if (sport === 'mlb') {
-          // MLB specific handling
-          const homeTeam = game.homeTeam?.displayName || game.homeTeam?.name || 'Home';
-          const awayTeam = game.awayTeam?.displayName || game.awayTeam?.name || 'Away';
-          matchup = `${awayTeam} @ ${homeTeam}`;
-          startTime = game.dateTime || game.start_time || game.startTime;
-          
-          // Add record info if available
-          if (game.homeWins && game.homeLosses && game.awayWins && game.awayLosses) {
-            matchup += ` (${game.awayWins}-${game.awayLosses} @ ${game.homeWins}-${game.homeLosses})`;
-          }
-        } else if (sport === 'nfl') {
-          // NFL specific handling
-          const homeTeam = game.homeTeam?.displayName || game.homeTeam?.name || 'Home';
-          const awayTeam = game.awayTeam?.displayName || game.awayTeam?.name || 'Away';
-          matchup = `${awayTeam} @ ${homeTeam}`;
-          startTime = game.dateTime || game.start_time || game.startTime;
-          
-          // Add season type and channel info
-          if (game.seasonType === 'preseason') {
-            additionalInfo = 'Preseason';
-          }
-          if (game.channel) {
-            additionalInfo += (additionalInfo ? ' • ' : '') + game.channel;
-          }
-          if (game.overUnder) {
-            additionalInfo += (additionalInfo ? ' • ' : '') + `O/U ${game.overUnder}`;
-          }
-        } else if (sport === 'golf' || sport === 'ufc') {
-          // Golf and UFC have different structures
-          if (sport === 'golf') {
-            // Golf tournaments have title in metadata
-            console.log('Golf game object:', game);
-            console.log('Golf metadata exists:', !!game.metadata);
-            console.log('Golf metadata:', game.metadata);
-            console.log('Golf title from metadata:', game.metadata?.title);
-            
-            let title = 'Golf Tournament'; // default
-            
-            // Try multiple ways to access the title
-            if (game.metadata && game.metadata.title) {
-              title = game.metadata.title;
-              console.log('Found title in metadata.title:', title);
-            } else if (game.title) {
-              title = game.title;
-              console.log('Found title in game.title:', title);
-            } else if (game.name) {
-              title = game.name;
-              console.log('Found title in game.name:', title);
-            } else {
-              console.log('No title found, using default');
-            }
-            
-            const venue = game.metadata?.subtitleFragments?.[0] || '';
-            console.log('Venue found:', venue);
-            
-            matchup = title;
-            if (venue) {
-              additionalInfo = venue;
-            }
-            
-            console.log('Final golf matchup:', matchup);
-            console.log('Final golf additionalInfo:', additionalInfo);
-          } else {
-            // UFC events
-            matchup = game.name || game.title || game.event || game.description || 'UFC Event';
-          }
-          startTime = game.start_time || game.startTime || game.date || game.dateTime;
-        } else {
-          // Other team sports (wnba, etc.)
-          const homeTeam = game.home_team || game.homeTeam?.displayName || game.homeTeam?.name || game.home || 'Home';
-          const awayTeam = game.away_team || game.awayTeam?.displayName || game.awayTeam?.name || game.away || 'Away';
-          matchup = `${awayTeam} @ ${homeTeam}`;
-          startTime = game.start_time || game.startTime || game.game_time || game.date || game.dateTime;
-        }
-        
-        // Convert time to readable format
-        let formattedTime = startTime;
-        let debugInfo = '';
-        
-        try {
-          if (startTime && startTime !== 'TBD') {
-            const date = new Date(startTime);
-            if (!isNaN(date.getTime())) {
-              // Format to Eastern Time
-              formattedTime = date.toLocaleString('en-US', {
-                timeZone: 'America/New_York',
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              }) + ' ET';
-              
-              debugInfo = `Raw: ${startTime}`;
-            } else {
-              debugInfo = `Invalid date: ${startTime}`;
-            }
-          }
-        } catch (e) {
-          console.error('Time conversion error:', e, startTime);
-          debugInfo = `Error: ${e.message}`;
-        }
-        
-        return { 
-          matchup, 
-          time: formattedTime,
-          additionalInfo,
-          debug: debugInfo,
-          rawGame: game, // Keep for debugging
-          sport: sport, // Add sport for filtering
-          gameDate: startTime ? new Date(startTime) : null // Add parsed date for filtering
-        };
-      });
-    }
-    
-    async function fetchAllSports() {
-      const resultsDiv = document.getElementById('results')
-      resultsDiv.innerHTML = 'Loading...'
-      
-      const fetches = sports.map(async sport => {
-        try {
-          console.log(`Fetching ${sport}...`);
-          const res = await fetch(`${workerURL}/?sport=${sport}&cohort=0`)
-          
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-          }
-          
-          const json = await res.json()
-          console.log(`${sport} response:`, json);
-          return { sport, data: json }
-        } catch (err) {
-          console.error(`Error fetching ${sport}:`, err);
-          return { sport, error: err.message }
-        }
-      })
-      
-      const allResults = await Promise.all(fetches)
-      
-      // Store all games data for filtering
-      allGamesData = [];
-      availableDates.clear();
-      
-      allResults.forEach(result => {
-        if (!result.error) {
-          const games = formatGameData(result.data, result.sport)
-          if (Array.isArray(games)) {
-            games.forEach(game => {
-              game.sport = result.sport; // Ensure sport is set
-              allGamesData.push(game);
-              
-              // Add date to available dates
-              if (game.gameDate) {
-                availableDates.add(game.gameDate.toDateString());
-              }
+
+    <script>
+        let currentSport = 'mlb';
+        const API_BASE = 'https://schedule.tommyek67.workers.dev/';
+
+        // Set default date to today
+        document.getElementById('dateInput').valueAsDate = new Date();
+
+        // Sport button handlers
+        document.querySelectorAll('.sport-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.sport-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSport = btn.dataset.sport;
             });
-          }
-        }
-      });
-      
-      // Show calendar and render it
-      showCalendar();
-      
-      // Display results
-      displayResults(allResults);
-    }
-    
-    function showCalendar() {
-      const calendarContainer = document.getElementById('calendarContainer');
-      calendarContainer.style.display = 'block';
-      
-      // Set current calendar date to first available date or today
-      if (availableDates.size > 0) {
-        const firstDate = Array.from(availableDates).sort()[0];
-        currentCalendarDate = new Date(firstDate);
-      } else {
-        currentCalendarDate = new Date();
-      }
-      
-      renderCalendar();
-    }
-    
-    function renderCalendar() {
-      const calendarTitle = document.getElementById('calendarTitle');
-      const calendarGrid = document.getElementById('calendarGrid');
-      
-      // Set title
-      calendarTitle.textContent = currentCalendarDate.toLocaleString('en-US', { 
-        month: 'long', 
-        year: 'numeric' 
-      });
-      
-      // Clear grid
-      calendarGrid.innerHTML = '';
-      
-      // Add day headers
-      const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      dayHeaders.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'calendar-day-header';
-        dayHeader.textContent = day;
-        calendarGrid.appendChild(dayHeader);
-      });
-      
-      // Get first day of month and number of days
-      const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
-      const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
-      const startDate = new Date(firstDay);
-      startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
-      
-      // Generate calendar days
-      const today = new Date().toDateString();
-      for (let i = 0; i < 42; i++) { // 6 weeks
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-        dayElement.textContent = date.getDate();
-        
-        const dateStr = date.toDateString();
-        
-        // Add classes
-        if (date.getMonth() !== currentCalendarDate.getMonth()) {
-          dayElement.classList.add('other-month');
-        }
-        if (dateStr === today) {
-          dayElement.classList.add('today');
-        }
-        if (availableDates.has(dateStr)) {
-          dayElement.classList.add('has-games');
-        }
-        if (selectedDate && dateStr === selectedDate) {
-          dayElement.classList.add('selected');
-        }
-        
-        // Add click handler only for dates with games
-        if (availableDates.has(dateStr)) {
-          dayElement.style.cursor = 'pointer';
-          dayElement.onclick = () => selectDate(dateStr);
-        } else {
-          dayElement.style.cursor = 'default';
-          dayElement.style.opacity = '0.5';
-        }
-        
-        calendarGrid.appendChild(dayElement);
-      }
-    }
-    
-    function previousMonth() {
-      currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-      renderCalendar();
-    }
-    
-    function nextMonth() {
-      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-      renderCalendar();
-    }
-    
-    function selectDate(dateStr) {
-      selectedDate = dateStr;
-      renderCalendar(); // Re-render to show selection
-      
-      // Filter games by selected date
-      const filteredGames = allGamesData.filter(game => {
-        if (!game.gameDate) return false;
-        return game.gameDate.toDateString() === dateStr;
-      });
-      
-      // Group filtered games by sport
-      const gamesBySport = {};
-      filteredGames.forEach(game => {
-        if (!gamesBySport[game.sport]) {
-          gamesBySport[game.sport] = [];
-        }
-        gamesBySport[game.sport].push(game);
-      });
-      
-      // Display filtered results
-      displayFilteredResults(gamesBySport, dateStr);
-    }
-    
-    function clearDateFilter() {
-      selectedDate = null;
-      renderCalendar();
-      
-      // Re-fetch and display all results
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = 'Loading...';
-      fetchAllSports();
-    }
-    
-    function displayFilteredResults(gamesBySport, selectedDate) {
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '';
-      
-      // Add date header
-      const dateHeader = document.createElement('h2');
-      dateHeader.textContent = `Games on ${new Date(selectedDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long', 
-        day: 'numeric',
-        year: 'numeric'
-      })}`;
-      dateHeader.style.marginTop = '0';
-      resultsDiv.appendChild(dateHeader);
-      
-      if (Object.keys(gamesBySport).length === 0) {
-        const noGamesDiv = document.createElement('div');
-        noGamesDiv.textContent = 'No games found for this date';
-        noGamesDiv.style.fontStyle = 'italic';
-        noGamesDiv.style.color = '#666';
-        resultsDiv.appendChild(noGamesDiv);
-        return;
-      }
-      
-      // Display games grouped by sport
-      Object.keys(gamesBySport).sort().forEach(sport => {
-        const section = document.createElement('div');
-        section.className = 'result';
-        
-        const title = document.createElement('h2');
-        title.textContent = `${sport.toUpperCase()} (${gamesBySport[sport].length})`;
-        section.appendChild(title);
-        
-        gamesBySport[sport].forEach(game => {
-          const gameDiv = document.createElement('div');
-          gameDiv.className = 'game';
-          
-          const matchupDiv = document.createElement('div');
-          matchupDiv.className = 'matchup';
-          matchupDiv.textContent = game.matchup;
-          
-          const timeDiv = document.createElement('div');
-          timeDiv.className = 'time';
-          timeDiv.textContent = game.time;
-          
-          gameDiv.appendChild(matchupDiv);
-          gameDiv.appendChild(timeDiv);
-          
-          // Add additional info if available
-          if (game.additionalInfo) {
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'time';
-            infoDiv.style.fontSize = '0.8rem';
-            infoDiv.style.fontStyle = 'italic';
-            infoDiv.textContent = game.additionalInfo;
-            gameDiv.appendChild(infoDiv);
-          }
-          
-          // Add debug info if available
-          if (game.debug) {
-            const debugDiv = document.createElement('div');
-            debugDiv.className = 'debug';
-            debugDiv.textContent = game.debug;
-            gameDiv.appendChild(debugDiv);
-          }
-          
-          section.appendChild(gameDiv);
         });
-        
-        resultsDiv.appendChild(section);
-      });
-    }
-    
-    function displayResults(allResults) {
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '';
-      
-      allResults.forEach(result => {
-        const section = document.createElement('div')
-        section.className = 'result'
-        
-        const title = document.createElement('h2')
-        title.textContent = result.sport.toUpperCase()
-        section.appendChild(title)
-        
-        if (result.error) {
-          const errorDiv = document.createElement('div')
-          errorDiv.className = 'error'
-          errorDiv.textContent = `Error: ${result.error}`
-          section.appendChild(errorDiv)
-        } else {
-          const games = formatGameData(result.data, result.sport)
-          
-          if (typeof games === 'string') {
-            const noGamesDiv = document.createElement('div')
-            noGamesDiv.textContent = games
-            section.appendChild(noGamesDiv)
-          } else {
-            games.forEach(game => {
-              const gameDiv = document.createElement('div')
-              gameDiv.className = 'game'
-              
-              const matchupDiv = document.createElement('div')
-              matchupDiv.className = 'matchup'
-              matchupDiv.textContent = game.matchup
-              
-              const timeDiv = document.createElement('div')
-              timeDiv.className = 'time'
-              timeDiv.textContent = game.time
-              
-              gameDiv.appendChild(matchupDiv)
-              gameDiv.appendChild(timeDiv)
-              
-              // Add additional info if available
-              if (game.additionalInfo) {
-                const infoDiv = document.createElement('div')
-                infoDiv.className = 'time'
-                infoDiv.style.fontSize = '0.8rem'
-                infoDiv.style.fontStyle = 'italic'
-                infoDiv.textContent = game.additionalInfo
-                gameDiv.appendChild(infoDiv)
-              }
-              
-              // Add debug info if available
-              if (game.debug) {
-                const debugDiv = document.createElement('div')
-                debugDiv.className = 'debug'
-                debugDiv.textContent = game.debug
-                gameDiv.appendChild(debugDiv)
-              }
-              
-              section.appendChild(gameDiv)
-            })
-          }
+
+        // Fetch button handler
+        document.getElementById('fetchBtn').addEventListener('click', fetchSchedule);
+
+        // Enter key handler for date input
+        document.getElementById('dateInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchSchedule();
+        });
+
+        async function fetchSchedule() {
+            const dateInput = document.getElementById('dateInput');
+            const selectedDate = dateInput.value;
+            
+            if (!selectedDate) {
+                showError('Please select a date');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideSchedule();
+
+            try {
+                const url = `${API_BASE}?sport=${currentSport}&day=${selectedDate}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displaySchedule(data, selectedDate);
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showError(`Failed to load schedule: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
         }
-        
-        resultsDiv.appendChild(section)
-      })
-    }
-  </script>
+
+        function displaySchedule(data, date) {
+            const container = document.getElementById('scheduleContainer');
+            const title = document.getElementById('scheduleTitle');
+            const dateElement = document.getElementById('scheduleDate');
+            const gamesGrid = document.getElementById('gamesGrid');
+
+            const sportNames = {
+                mlb: 'Major League Baseball',
+                nfl: 'National Football League',
+                wnba: 'Women\'s National Basketball Association',
+                ufc: 'Ultimate Fighting Championship',
+                golf: 'Professional Golf'
+            };
+
+            title.textContent = sportNames[currentSport] || currentSport.toUpperCase();
+            dateElement.textContent = formatDate(date);
+
+            if (!data.content?.games || data.content.games.length === 0) {
+                gamesGrid.innerHTML = `
+                    <div class="no-games">
+                        <div class="no-games-icon">📅</div>
+                        <h3>No games scheduled</h3>
+                        <p>There are no ${sportNames[currentSport]} games scheduled for this date.</p>
+                    </div>
+                `;
+            } else {
+                gamesGrid.innerHTML = data.content.games.map(game => createGameCard(game)).join('');
+            }
+
+            container.style.display = 'block';
+        }
+
+        function createGameCard(game) {
+            const gameTime = formatTime(game.dateTime);
+            const homeTeam = game.homeTeam || {};
+            const awayTeam = game.awayTeam || {};
+            
+            return `
+                <div class="game-card">
+                    <div class="game-time">${gameTime}</div>
+                    <div class="teams">
+                        <div class="team">
+                            <div class="team-name">${awayTeam.displayName || awayTeam.name || 'Away Team'}</div>
+                            <div class="team-record">${game.awayScoreDisplay || 'TBD'}</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <div class="team-name">${homeTeam.displayName || homeTeam.name || 'Home Team'}</div>
+                            <div class="team-record">${game.homeScoreDisplay || 'TBD'}</div>
+                        </div>
+                    </div>
+                    ${createGameInfo(game)}
+                </div>
+            `;
+        }
+
+        function createGameInfo(game) {
+            const info = [];
+            
+            if (game.overUnder) {
+                info.push(`O/U: ${game.overUnder}`);
+            }
+            
+            if (game.homeMoneyline || game.awayMoneyline) {
+                const homeML = game.homeMoneyline ? (game.homeMoneyline > 0 ? `+${game.homeMoneyline}` : game.homeMoneyline) : '-';
+                const awayML = game.awayMoneyline ? (game.awayMoneyline > 0 ? `+${game.awayMoneyline}` : game.awayMoneyline) : '-';
+                info.push(`ML: ${awayML} / ${homeML}`);
+            }
+
+            if (game.status) {
+                info.push(`Status: ${game.status.charAt(0).toUpperCase() + game.status.slice(1)}`);
+            }
+
+            return info.length > 0 ? `
+                <div class="game-info">
+                    <div class="betting-info">
+                        ${info.map(item => `<span>${item}</span>`).join('')}
+                    </div>
+                </div>
+            ` : '';
+        }
+
+        function formatTime(dateTimeString) {
+            if (!dateTimeString) return 'TBD';
+            
+            try {
+                const date = new Date(dateTimeString);
+                return date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            } catch (error) {
+                return 'TBD';
+            }
+        }
+
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString + 'T00:00:00');
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (error) {
+                return dateString;
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        function hideSchedule() {
+            document.getElementById('scheduleContainer').style.display = 'none';
+        }
+
+        // Load today's MLB schedule by default
+        fetchSchedule();
+    </script>
 </body>
 </html>
