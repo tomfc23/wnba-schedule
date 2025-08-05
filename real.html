@@ -73,42 +73,43 @@
         return;
       }
 
-      games.forEach(game => {
-        const home = game.homeTeam;
-        const away = game.awayTeam;
+     games.forEach(game => {
+  const home = game.homeTeam;
+  const away = game.awayTeam;
 
-        // Convert startTimeUTC to America/New_York time
-        let localTime = 'TBD';
-        if (game.startTimeUTC) {
-          const utcDate = new Date(game.startTimeUTC);
-          localTime = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/New_York',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          }).format(utcDate);
-        }
+  // Convert game.dateTime (UTC) to local time in EST
+  let localTime = 'TBD';
+  if (game.dateTime) {
+    const utcDate = new Date(game.dateTime);
+    localTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(utcDate);
+  }
 
-        const div = document.createElement('div');
-        div.className = 'game';
+  const div = document.createElement('div');
+  div.className = 'game';
 
-        div.innerHTML = `
-          <div class="teams">
-            <div>
-              ${away.displayName}
-              <div class="record">${game.awayWins}-${game.awayLosses}</div>
-            </div>
-            <div>at</div>
-            <div>
-              ${home.displayName}
-              <div class="record">${game.homeWins}-${game.homeLosses}</div>
-            </div>
-          </div>
-          <div class="time">Start Time (EST): ${localTime}</div>
-        `;
+  div.innerHTML = `
+    <div class="teams">
+      <div>
+        ${away.displayName}
+        <div class="record">${game.awayWins}-${game.awayLosses}</div>
+      </div>
+      <div>at</div>
+      <div>
+        ${home.displayName}
+        <div class="record">${game.homeWins}-${game.homeLosses}</div>
+      </div>
+    </div>
+    <div class="time">Start Time (EST): ${localTime}</div>
+  `;
 
-        container.appendChild(div);
-      });
+  container.appendChild(div);
+});
+
     } catch (err) {
       console.error('Failed to load schedule:', err);
       document.getElementById('games').innerHTML = "<p>Error loading schedule.</p>";
