@@ -47,22 +47,109 @@
       color: #999;
       margin-top: 0.25rem;
     }
+    .calendar-container {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #f9f9f9;
+      border-radius: 6px;
+      max-width: 400px;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .calendar-nav {
+      background: #007cba;
+      color: white;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .calendar-nav:hover {
+      background: #005a87;
+    }
+    .calendar-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-weight: bold;
+      padding: 0.5rem;
+      background: #e0e0e0;
+      font-size: 0.8rem;
+    }
+    .calendar-day {
+      text-align: center;
+      padding: 0.5rem;
+      cursor: pointer;
+      background: white;
+      border: 1px solid #ddd;
+      min-height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .calendar-day:hover {
+      background: #f0f0f0;
+    }
+    .calendar-day.other-month {
+      color: #ccc;
+      background: #f8f8f8;
+    }
+    .calendar-day.has-games {
+      background: #e3f2fd;
+      font-weight: bold;
+      color: #1976d2;
+    }
+    .calendar-day.selected {
+      background: #007cba;
+      color: white;
+    }
+    .calendar-day.today {
+      border: 2px solid #ff9800;
+    }
+    .filter-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
   <h1>Fetch Next Games for All Sports</h1>
-  <div style="margin-bottom: 1rem;">
+  <div class="filter-controls">
     <button onclick="fetchAllSports()">Fetch All</button>
-    <select id="dateFilter" onchange="filterByDate()" style="margin-left: 1rem; padding: 0.5rem; font-size: 1rem;">
-      <option value="">All Dates</option>
-    </select>
+    <button onclick="clearDateFilter()" style="background: #666;">Show All Dates</button>
   </div>
+  
+  <div class="calendar-container" id="calendarContainer" style="display: none;">
+    <div class="calendar-header">
+      <button class="calendar-nav" onclick="previousMonth()">‹</button>
+      <div class="calendar-title" id="calendarTitle"></div>
+      <button class="calendar-nav" onclick="nextMonth()">›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+  
   <div id="results"></div>
   <script>
     const sports = ['mlb', 'nfl', 'wnba', 'golf', 'ufc']
     const workerURL = 'https://schedule.tommyek67.workers.dev/' // update if needed
     
     let allGamesData = []; // Store all games data for filtering
+    let availableDates = new Set(); // Store dates that have games
+    let currentCalendarDate = new Date(); // Current month/year being displayed
+    let selectedDate = null; // Currently selected date
     
     function formatGameData(data, sport) {
       console.log(`Processing ${sport} data:`, data);
@@ -246,6 +333,8 @@
       
       // Store all games data for filtering
       allGamesData = [];
+      availableDates.clear();
+      
       allResults.forEach(result => {
         if (!result.error) {
           const games = formatGameData(result.data, result.sport)
@@ -253,65 +342,123 @@
             games.forEach(game => {
               game.sport = result.sport; // Ensure sport is set
               allGamesData.push(game);
+              
+              // Add date to available dates
+              if (game.gameDate) {
+                availableDates.add(game.gameDate.toDateString());
+              }
             });
           }
         }
       });
       
-      // Populate date dropdown
-      populateDateDropdown();
+      // Show calendar and render it
+      showCalendar();
       
       // Display results
       displayResults(allResults);
     }
     
-    function populateDateDropdown() {
-      const dateFilter = document.getElementById('dateFilter');
-      const dates = new Set();
+    function showCalendar() {
+      const calendarContainer = document.getElementById('calendarContainer');
+      calendarContainer.style.display = 'block';
       
-      // Extract unique dates from all games
-      allGamesData.forEach(game => {
-        if (game.gameDate) {
-          const dateStr = game.gameDate.toDateString();
-          dates.add(dateStr);
-        }
-      });
-      
-      // Clear existing options except "All Dates"
-      while (dateFilter.children.length > 1) {
-        dateFilter.removeChild(dateFilter.lastChild);
+      // Set current calendar date to first available date or today
+      if (availableDates.size > 0) {
+        const firstDate = Array.from(availableDates).sort()[0];
+        currentCalendarDate = new Date(firstDate);
+      } else {
+        currentCalendarDate = new Date();
       }
       
-      // Sort dates and add to dropdown
-      const sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
-      sortedDates.forEach(dateStr => {
-        const option = document.createElement('option');
-        option.value = dateStr;
-        option.textContent = new Date(dateStr).toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short', 
-          day: 'numeric'
-        });
-        dateFilter.appendChild(option);
-      });
+      renderCalendar();
     }
     
-    function filterByDate() {
-      const dateFilter = document.getElementById('dateFilter');
-      const selectedDate = dateFilter.value;
+    function renderCalendar() {
+      const calendarTitle = document.getElementById('calendarTitle');
+      const calendarGrid = document.getElementById('calendarGrid');
       
-      if (!selectedDate) {
-        // Show all games - re-fetch and display
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = 'Loading...';
-        fetchAllSports();
-        return;
+      // Set title
+      calendarTitle.textContent = currentCalendarDate.toLocaleString('en-US', { 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      
+      // Clear grid
+      calendarGrid.innerHTML = '';
+      
+      // Add day headers
+      const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      dayHeaders.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day-header';
+        dayHeader.textContent = day;
+        calendarGrid.appendChild(dayHeader);
+      });
+      
+      // Get first day of month and number of days
+      const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+      const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+      const startDate = new Date(firstDay);
+      startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
+      
+      // Generate calendar days
+      const today = new Date().toDateString();
+      for (let i = 0; i < 42; i++) { // 6 weeks
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.textContent = date.getDate();
+        
+        const dateStr = date.toDateString();
+        
+        // Add classes
+        if (date.getMonth() !== currentCalendarDate.getMonth()) {
+          dayElement.classList.add('other-month');
+        }
+        if (dateStr === today) {
+          dayElement.classList.add('today');
+        }
+        if (availableDates.has(dateStr)) {
+          dayElement.classList.add('has-games');
+        }
+        if (selectedDate && dateStr === selectedDate) {
+          dayElement.classList.add('selected');
+        }
+        
+        // Add click handler only for dates with games
+        if (availableDates.has(dateStr)) {
+          dayElement.style.cursor = 'pointer';
+          dayElement.onclick = () => selectDate(dateStr);
+        } else {
+          dayElement.style.cursor = 'default';
+          dayElement.style.opacity = '0.5';
+        }
+        
+        calendarGrid.appendChild(dayElement);
       }
+    }
+    
+    function previousMonth() {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+      renderCalendar();
+    }
+    
+    function nextMonth() {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+      renderCalendar();
+    }
+    
+    function selectDate(dateStr) {
+      selectedDate = dateStr;
+      renderCalendar(); // Re-render to show selection
       
       // Filter games by selected date
       const filteredGames = allGamesData.filter(game => {
         if (!game.gameDate) return false;
-        return game.gameDate.toDateString() === selectedDate;
+        return game.gameDate.toDateString() === dateStr;
       });
       
       // Group filtered games by sport
@@ -324,7 +471,17 @@
       });
       
       // Display filtered results
-      displayFilteredResults(gamesBySport, selectedDate);
+      displayFilteredResults(gamesBySport, dateStr);
+    }
+    
+    function clearDateFilter() {
+      selectedDate = null;
+      renderCalendar();
+      
+      // Re-fetch and display all results
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = 'Loading...';
+      fetchAllSports();
     }
     
     function displayFilteredResults(gamesBySport, selectedDate) {
