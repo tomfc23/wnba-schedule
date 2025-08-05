@@ -38,6 +38,15 @@
       color: #666;
       font-size: 0.9rem;
     }
+    .error {
+      color: red;
+      font-style: italic;
+    }
+    .debug {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 0.25rem;
+    }
   </style>
 </head>
 <body>
@@ -49,49 +58,102 @@
     const workerURL = 'https://schedule.tommyek67.workers.dev/' // update if needed
     
     function formatGameData(data, sport) {
-      if (!data || !Array.isArray(data)) {
-        return 'No games found'
+      console.log(`Processing ${sport} data:`, data);
+      
+      // Handle different response structures
+      let games = [];
+      
+      if (data && typeof data === 'object') {
+        // Check if it's the MLB format with latestDayContent
+        if (data.latestDayContent && data.latestDayContent.games) {
+          games = data.latestDayContent.games;
+        }
+        // Check if it's a direct array
+        else if (Array.isArray(data)) {
+          games = data;
+        }
+        // Check if it has a games property
+        else if (data.games && Array.isArray(data.games)) {
+          games = data.games;
+        }
+        // Check if it has events property (for golf/UFC)
+        else if (data.events && Array.isArray(data.events)) {
+          games = data.events;
+        }
+        else {
+          console.warn(`Unknown data structure for ${sport}:`, data);
+          return 'Unknown data format - check console';
+        }
       }
       
-      return data.map(game => {
-        let matchup = ''
-        let startTime = ''
+      if (!games || games.length === 0) {
+        return 'No games found';
+      }
+      
+      return games.map(game => {
+        let matchup = '';
+        let startTime = '';
         
         // Handle different sports data structures
-        if (sport === 'golf' || sport === 'ufc') {
+        if (sport === 'mlb') {
+          // MLB specific handling
+          const homeTeam = game.homeTeam?.displayName || game.homeTeam?.name || 'Home';
+          const awayTeam = game.awayTeam?.displayName || game.awayTeam?.name || 'Away';
+          matchup = `${awayTeam} @ ${homeTeam}`;
+          startTime = game.dateTime || game.start_time || game.startTime;
+          
+          // Add record info if available
+          if (game.homeWins && game.homeLosses && game.awayWins && game.awayLosses) {
+            matchup += ` (${game.awayWins}-${game.awayLosses} @ ${game.homeWins}-${game.homeLosses})`;
+          }
+        } else if (sport === 'golf' || sport === 'ufc') {
           // These might have different structures
-          matchup = game.name || game.title || game.event || 'Event'
-          startTime = game.start_time || game.startTime || game.date || 'TBD'
+          matchup = game.name || game.title || game.event || game.description || 'Event';
+          startTime = game.start_time || game.startTime || game.date || game.dateTime;
         } else {
-          // Team sports (mlb, nfl, wnba)
-          const homeTeam = game.home_team || game.homeTeam || game.home || 'Home'
-          const awayTeam = game.away_team || game.awayTeam || game.away || 'Away'
-          matchup = `${awayTeam} vs ${homeTeam}`
-          startTime = game.start_time || game.startTime || game.game_time || game.date || 'TBD'
+          // Team sports (nfl, wnba)
+          const homeTeam = game.home_team || game.homeTeam || game.home || 'Home';
+          const awayTeam = game.away_team || game.awayTeam || game.away || 'Away';
+          matchup = `${awayTeam} @ ${homeTeam}`;
+          startTime = game.start_time || game.startTime || game.game_time || game.date || game.dateTime;
         }
         
-        // Convert time to EST if possible
-        let formattedTime = startTime
+        // Convert time to readable format
+        let formattedTime = startTime;
+        let debugInfo = '';
+        
         try {
           if (startTime && startTime !== 'TBD') {
-            const date = new Date(startTime)
+            const date = new Date(startTime);
             if (!isNaN(date.getTime())) {
+              // Format to Eastern Time
               formattedTime = date.toLocaleString('en-US', {
                 timeZone: 'America/New_York',
+                weekday: 'short',
                 month: 'short',
                 day: 'numeric',
                 hour: 'numeric',
                 minute: '2-digit',
                 hour12: true
-              }) + ' EST'
+              }) + ' ET';
+              
+              debugInfo = `Raw: ${startTime}`;
+            } else {
+              debugInfo = `Invalid date: ${startTime}`;
             }
           }
         } catch (e) {
-          // Keep original time if conversion fails
+          console.error('Time conversion error:', e, startTime);
+          debugInfo = `Error: ${e.message}`;
         }
         
-        return { matchup, time: formattedTime }
-      })
+        return { 
+          matchup, 
+          time: formattedTime,
+          debug: debugInfo,
+          rawGame: game // Keep for debugging
+        };
+      });
     }
     
     async function fetchAllSports() {
@@ -100,10 +162,18 @@
       
       const fetches = sports.map(async sport => {
         try {
+          console.log(`Fetching ${sport}...`);
           const res = await fetch(`${workerURL}/?sport=${sport}&cohort=0`)
+          
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          
           const json = await res.json()
+          console.log(`${sport} response:`, json);
           return { sport, data: json }
         } catch (err) {
+          console.error(`Error fetching ${sport}:`, err);
           return { sport, error: err.message }
         }
       })
@@ -121,8 +191,8 @@
         
         if (result.error) {
           const errorDiv = document.createElement('div')
+          errorDiv.className = 'error'
           errorDiv.textContent = `Error: ${result.error}`
-          errorDiv.style.color = 'red'
           section.appendChild(errorDiv)
         } else {
           const games = formatGameData(result.data, result.sport)
@@ -146,6 +216,15 @@
               
               gameDiv.appendChild(matchupDiv)
               gameDiv.appendChild(timeDiv)
+              
+              // Add debug info if available
+              if (game.debug) {
+                const debugDiv = document.createElement('div')
+                debugDiv.className = 'debug'
+                debugDiv.textContent = game.debug
+                gameDiv.appendChild(debugDiv)
+              }
+              
               section.appendChild(gameDiv)
             })
           }
