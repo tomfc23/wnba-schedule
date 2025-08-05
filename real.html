@@ -1,667 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLB Schedule Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <title>MLB Schedule Today</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #ffffff;
-            min-height: 100vh;
-            padding: 20px;
-        }
+    h1 {
+      text-align: center;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+    .game {
+      background: #fff;
+      margin: 10px auto;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      max-width: 600px;
+    }
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 30px 0;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+    .teams {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
 
-        .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+    .record {
+      font-size: 0.9em;
+      color: #555;
+    }
 
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.8;
-        }
-
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-            font-size: 1.5rem;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-left: 4px solid #4facfe;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            text-align: center;
-            padding: 40px;
-            background: rgba(255, 0, 0, 0.1);
-            border: 1px solid rgba(255, 0, 0, 0.3);
-            border-radius: 15px;
-            margin: 20px 0;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            margin: 20px auto;
-            display: block;
-            transition: all 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
-        }
-
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .game-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 25px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
-        }
-
-        .game-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .game-time {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #4facfe;
-        }
-
-        .game-status {
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-scheduled {
-            background: rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-            border: 1px solid rgba(255, 193, 7, 0.4);
-        }
-
-        .teams {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 20px 0;
-        }
-
-        .team {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-        }
-
-        .team-name {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .team-record {
-            font-size: 0.95rem;
-            opacity: 0.7;
-        }
-
-        .vs {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #4facfe;
-            margin: 0 20px;
-        }
-
-        .game-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .detail-label {
-            font-size: 0.8rem;
-            opacity: 0.6;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-value {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-
-        .moneyline {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-        }
-
-        .moneyline-item {
-            text-align: center;
-        }
-
-        .moneyline-team {
-            font-size: 0.9rem;
-            opacity: 0.7;
-            margin-bottom: 5px;
-        }
-
-        .moneyline-odds {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #4facfe;
-        }
-
-        .stats-summary {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .stat-item {
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #4facfe;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.7;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        @media (max-width: 768px) {
-            .games-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .game-details {
-                grid-template-columns: 1fr;
-            }
-            
-            .teams {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .vs {
-                order: -1;
-                margin: 10px 0;
-            }
-        }
-    </style>
+    .time {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 1em;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>⚾ MLB Schedule</h1>
-            <p>Live game schedule and odds</p>
-            <button class="refresh-btn" onclick="fetchScheduleData()">Refresh Data</button>
-        </div>
+  <h1>Today's MLB Schedule</h1>
+  <div id="games"></div>
 
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            Loading schedule data...
-        </div>
+  <script>
+    async function loadSchedule() {
+      try {
+        const response = await fetch("https://schedule.tommyek67.workers.dev/");
+        const data = await response.json();
 
-        <div id="error" class="error" style="display: none;">
-            <h3>⚠️ Error Loading Data</h3>
-            <p id="error-message"></p>
-        </div>
+        const today = new Date().toISOString().split('T')[0]; // e.g. "2025-08-05"
+        const games = data.latestDayContent?.games || [];
 
-        <div id="stats-summary" class="stats-summary" style="display: none;">
-            <h2>Today's Games Summary</h2>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <span class="stat-number" id="total-games">0</span>
-                    <span class="stat-label">Total Games</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="avg-over-under">0</span>
-                    <span class="stat-label">Avg O/U</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="latest-game">--</span>
-                    <span class="stat-label">Latest Start</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="current-date">--</span>
-                    <span class="stat-label">Date</span>
-                </div>
+        const container = document.getElementById('games');
+        container.innerHTML = '';
+
+        if (data.latestDay !== today || games.length === 0) {
+          container.innerHTML = "<p>No games scheduled today.</p>";
+          return;
+        }
+
+        games.forEach(game => {
+          const home = game.homeTeam;
+          const away = game.awayTeam;
+          const displayTime = game.display?.primary || 'TBD';
+
+          const div = document.createElement('div');
+          div.className = 'game';
+
+          div.innerHTML = `
+            <div class="teams">
+              <div>
+                ${away.displayName}
+                <div class="record">${game.awayWins}-${game.awayLosses}</div>
+              </div>
+              <div>at</div>
+              <div>
+                ${home.displayName}
+                <div class="record">${game.homeWins}-${game.homeLosses}</div>
+              </div>
             </div>
-        </div>
+            <div class="time">Start Time: ${displayTime}</div>
+          `;
 
-        <div id="games-container" class="games-grid"></div>
-    </div>
-
-    <script>
-        let scheduleData = null;
-
-        async function fetchScheduleData() {
-            const loading = document.getElementById('loading');
-            const error = document.getElementById('error');
-            const gamesContainer = document.getElementById('games-container');
-            const statsContainer = document.getElementById('stats-summary');
-
-            loading.style.display = 'flex';
-            error.style.display = 'none';
-            gamesContainer.innerHTML = '';
-            statsContainer.style.display = 'none';
-
-            // Cloudflare Worker URL - replace with your actual worker URL
-            const workerUrl = 'https://schedule.tommyek67.workers.dev/';
-
-            try {
-                console.log(`Fetching data from worker: ${workerUrl}`);
-                
-                const response = await fetch(workerUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Worker responded with status: ${response.status}`);
-                }
-
-                scheduleData = await response.json();
-                
-                // Log worker metadata if available
-                if (scheduleData._fetchedAt) {
-                    console.log(`Data fetched at: ${scheduleData._fetchedAt}`);
-                }
-                if (scheduleData._workerVersion) {
-                    console.log(`Worker version: ${scheduleData._workerVersion}`);
-                }
-                
-                loading.style.display = 'none';
-                
-                if (scheduleData && scheduleData.latestDayContent && scheduleData.latestDayContent.games) {
-                    // Check if the day matches current date
-                    const apiDay = scheduleData.latestDayContent.day;
-                    const todayDate = getCurrentDateString();
-                    
-                    console.log(`API Day: ${apiDay}, Current Date: ${todayDate}`);
-                    
-                    if (apiDay === todayDate) {
-                        displayGames(scheduleData.latestDayContent.games);
-                        displayStats(scheduleData.latestDayContent.games);
-                    } else {
-                        throw new Error(`No games found for today (${todayDate}). API has data for ${apiDay}.`);
-                    }
-                } else {
-                    throw new Error('Invalid data format received from worker');
-                }
-
-            } catch (err) {
-                loading.style.display = 'none';
-                error.style.display = 'block';
-                document.getElementById('error-message').innerHTML = 
-                    `<strong>Failed to load schedule data:</strong><br>
-                    ${err.message}<br><br>
-                    <small>Make sure to replace YOUR_WORKER_URL_HERE with your actual Cloudflare Worker URL</small><br><br>
-                    <button onclick="loadSampleData()" style="padding: 10px 20px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer;">Load Sample Data</button>`;
-                console.error('Error fetching data from worker:', err);
-            }
-        }
-
-        // Get current date in YYYY-MM-DD format
-        function getCurrentDateString() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Sample data function for demonstration
-        function loadSampleData() {
-            const displayDate = getCurrentDateString();
-            const sampleData = {
-                latestDayContent: {
-                    day: currentDate, // Use current date for demo
-                    games: [
-                        {
-                            "id": 776866,
-                            "sport": "mlb",
-                            "status": "scheduled",
-                            "dateTime": "2025-08-05T22:40:00.000Z",
-                            "homeTeamId": 134,
-                            "awayTeamId": 137,
-                            "overUnder": "8.5",
-                            "homeMoneyline": 110,
-                            "awayMoneyline": -130,
-                            "commentCount": 59,
-                            "activityCount": 216,
-                            "display": {
-                                "homeScoreDisplay": "49-64",
-                                "awayScoreDisplay": "56-57",
-                                "primary": "10:40 PM"
-                            },
-                            "homeTeam": {
-                                "id": 134,
-                                "key": "PIT",
-                                "name": "Pirates",
-                                "displayName": "Pirates"
-                            },
-                            "awayTeam": {
-                                "id": 137,
-                                "key": "SF",
-                                "name": "Giants",
-                                "displayName": "Giants"
-                            }
-                        },
-                        {
-                            "id": 776862,
-                            "sport": "mlb",
-                            "status": "scheduled",
-                            "dateTime": "2025-08-05T22:40:00.000Z",
-                            "homeTeamId": 146,
-                            "awayTeamId": 117,
-                            "overUnder": "8.5",
-                            "homeMoneyline": -116,
-                            "awayMoneyline": -102,
-                            "commentCount": 33,
-                            "activityCount": 120,
-                            "display": {
-                                "homeScoreDisplay": "55-56",
-                                "awayScoreDisplay": "63-50",
-                                "primary": "10:40 PM"
-                            },
-                            "homeTeam": {
-                                "id": 146,
-                                "key": "MIA",
-                                "name": "Marlins",
-                                "displayName": "Marlins"
-                            },
-                            "awayTeam": {
-                                "id": 117,
-                                "key": "HOU",
-                                "name": "Astros",
-                                "displayName": "Astros"
-                            }
-                        },
-                        {
-                            "id": 776861,
-                            "sport": "mlb",
-                            "status": "scheduled",
-                            "dateTime": "2025-08-05T22:40:00.000Z",
-                            "homeTeamId": 116,
-                            "awayTeamId": 142,
-                            "overUnder": "8",
-                            "homeMoneyline": -164,
-                            "awayMoneyline": 138,
-                            "commentCount": 104,
-                            "activityCount": 238,
-                            "display": {
-                                "homeScoreDisplay": "66-48",
-                                "awayScoreDisplay": "52-60",
-                                "primary": "10:40 PM"
-                            },
-                            "homeTeam": {
-                                "id": 116,
-                                "key": "DET",
-                                "name": "Tigers",
-                                "displayName": "Tigers"
-                            },
-                            "awayTeam": {
-                                "id": 142,
-                                "key": "MIN",
-                                "name": "Twins",
-                                "displayName": "Twins"
-                            }
-                        }
-                    ]
-                }
-            };
-
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
-            
-            // Check date match for sample data too
-            const sampleApiDay = sampleData.latestDayContent.day;
-            const todaysDate = getCurrentDateString();
-            
-            if (sampleApiDay === todaysDate) {
-                displayGames(sampleData.latestDayContent.games);
-                displayStats(sampleData.latestDayContent.games);
-            } else {
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error-message').innerHTML = 
-                    `Sample data is for ${sampleApiDay}, but today is ${todaysDate}. No games to display.`;
-            }
-        }
-
-        function displayStats(games) {
-            const statsContainer = document.getElementById('stats-summary');
-            const totalGames = games.length;
-            const avgOverUnder = games.reduce((sum, game) => {
-                const ou = parseFloat(game.overUnder);
-                return sum + (isNaN(ou) ? 0 : ou);
-            }, 0) / totalGames;
-
-            const latestTime = games.reduce((latest, game) => {
-                const gameTime = new Date(game.dateTime);
-                return gameTime > latest ? gameTime : latest;
-            }, new Date(0));
-
-            const currentDate = getCurrentDateString();
-
-            document.getElementById('total-games').textContent = totalGames;
-            document.getElementById('avg-over-under').textContent = avgOverUnder.toFixed(1);
-            document.getElementById('latest-game').textContent = formatTime(latestTime);
-            document.getElementById('current-date').textContent = displayDate;
-
-            statsContainer.style.display = 'block';
-        }
-
-        function displayGames(games) {
-            const container = document.getElementById('games-container');
-            
-            if (!games || games.length === 0) {
-                container.innerHTML = '<div class="error">No games found for today.</div>';
-                return;
-            }
-
-            container.innerHTML = games.map(game => createGameCard(game)).join('');
-        }
-
-        function createGameCard(game) {
-            const gameTime = new Date(game.dateTime);
-            const homeTeam = game.homeTeam;
-            const awayTeam = game.awayTeam;
-            
-            return `
-                <div class="game-card">
-                    <div class="game-header">
-                        <div class="game-time">${formatTime(gameTime)}</div>
-                        <div class="game-status status-${game.status.toLowerCase()}">${game.status}</div>
-                    </div>
-                    
-                    <div class="teams">
-                        <div class="team">
-                            <div class="team-name">${awayTeam.displayName}</div>
-                            <div class="team-record">${game.display.awayScoreDisplay}</div>
-                        </div>
-                        <div class="vs">@</div>
-                        <div class="team">
-                            <div class="team-name">${homeTeam.displayName}</div>
-                            <div class="team-record">${game.display.homeScoreDisplay}</div>
-                        </div>
-                    </div>
-
-                    <div class="game-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Over/Under</div>
-                            <div class="detail-value">${game.overUnder || 'N/A'}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Game ID</div>
-                            <div class="detail-value">#${game.id}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Comments</div>
-                            <div class="detail-value">${game.commentCount || 0}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Activity</div>
-                            <div class="detail-value">${game.activityCount || 0}</div>
-                        </div>
-                    </div>
-
-                    ${(game.homeMoneyline && game.awayMoneyline) ? `
-                        <div class="moneyline">
-                            <div class="moneyline-item">
-                                <div class="moneyline-team">${awayTeam.key}</div>
-                                <div class="moneyline-odds">${formatMoneyline(game.awayMoneyline)}</div>
-                            </div>
-                            <div class="moneyline-item">
-                                <div class="moneyline-team">${homeTeam.key}</div>
-                                <div class="moneyline-odds">${formatMoneyline(game.homeMoneyline)}</div>
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        }
-
-        function formatTime(date) {
-            return date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-        }
-
-        function formatMoneyline(odds) {
-            if (odds > 0) {
-                return `+${odds}`;
-            }
-            return odds.toString();
-        }
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            fetchScheduleData();
-            
-            // Auto-refresh every 5 minutes
-            setInterval(fetchScheduleData, 5 * 60 * 1000);
+          container.appendChild(div);
         });
-    </script>
+      } catch (err) {
+        console.error('Failed to load schedule:', err);
+        document.getElementById('games').innerHTML = "<p>Error loading schedule.</p>";
+      }
+    }
+
+    loadSchedule();
+  </script>
 </body>
 </html>
