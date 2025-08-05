@@ -1,60 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>MLB Schedule Today</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
-    }
-
-    h1 {
-      text-align: center;
-    }
-
-    .game {
-      background: #fff;
-      margin: 10px auto;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-      max-width: 600px;
-    }
-
-    .teams {
-      display: flex;
-      justify-content: space-between;
-      font-size: 1.1em;
-      font-weight: bold;
-    }
-
-    .record {
-      font-size: 0.9em;
-      color: #555;
-    }
-
-    .time {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 1em;
-      color: #333;
-    }
-  </style>
-</head>
-<body>
-  <h1>Today's MLB Schedule</h1>
-  <div id="games"></div>
-
-  <script>
+<script>
   async function loadSchedule() {
     try {
       const response = await fetch("https://schedule.tommyek67.workers.dev/");
       const data = await response.json();
 
-      // Get today's date in America/New_York (EST/EDT)
+      // Get today's date in EST/EDT
       const formatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/New_York',
         year: 'numeric',
@@ -76,7 +26,18 @@
       games.forEach(game => {
         const home = game.homeTeam;
         const away = game.awayTeam;
-        const displayTime = game.display?.primary || 'TBD';
+
+        // Convert startTimeUTC to America/New_York time
+        let localTime = 'TBD';
+        if (game.startTimeUTC) {
+          const utcDate = new Date(game.startTimeUTC);
+          localTime = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          }).format(utcDate);
+        }
 
         const div = document.createElement('div');
         div.className = 'game';
@@ -93,7 +54,7 @@
               <div class="record">${game.homeWins}-${game.homeLosses}</div>
             </div>
           </div>
-          <div class="time">Start Time: ${displayTime}</div>
+          <div class="time">Start Time (EST): ${localTime}</div>
         `;
 
         container.appendChild(div);
@@ -106,6 +67,3 @@
 
   loadSchedule();
 </script>
-
-</body>
-</html>
