@@ -1,4 +1,54 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MLB Schedule Today</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .game {
+      background: #fff;
+      margin: 10px auto;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      max-width: 600px;
+    }
+
+    .teams {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+
+    .record {
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .time {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 1em;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Today's MLB Schedule</h1>
+  <div id="games"></div>
+
+ <script>
   async function loadSchedule() {
     try {
       const response = await fetch("https://schedule.tommyek67.workers.dev/");
@@ -67,3 +117,6 @@
 
   loadSchedule();
 </script>
+
+</body>
+</html>
