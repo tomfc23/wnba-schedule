@@ -64,7 +64,7 @@
       let games = [];
       
       if (data && typeof data === 'object') {
-        // Check if it's the MLB format with latestDayContent
+        // Check if it's the format with latestDayContent (MLB/NFL)
         if (data.latestDayContent && data.latestDayContent.games) {
           games = data.latestDayContent.games;
         }
@@ -93,6 +93,7 @@
       return games.map(game => {
         let matchup = '';
         let startTime = '';
+        let additionalInfo = '';
         
         // Handle different sports data structures
         if (sport === 'mlb') {
@@ -106,14 +107,31 @@
           if (game.homeWins && game.homeLosses && game.awayWins && game.awayLosses) {
             matchup += ` (${game.awayWins}-${game.awayLosses} @ ${game.homeWins}-${game.homeLosses})`;
           }
+        } else if (sport === 'nfl') {
+          // NFL specific handling
+          const homeTeam = game.homeTeam?.displayName || game.homeTeam?.name || 'Home';
+          const awayTeam = game.awayTeam?.displayName || game.awayTeam?.name || 'Away';
+          matchup = `${awayTeam} @ ${homeTeam}`;
+          startTime = game.dateTime || game.start_time || game.startTime;
+          
+          // Add season type and channel info
+          if (game.seasonType === 'preseason') {
+            additionalInfo = 'Preseason';
+          }
+          if (game.channel) {
+            additionalInfo += (additionalInfo ? ' • ' : '') + game.channel;
+          }
+          if (game.overUnder) {
+            additionalInfo += (additionalInfo ? ' • ' : '') + `O/U ${game.overUnder}`;
+          }
         } else if (sport === 'golf' || sport === 'ufc') {
           // These might have different structures
           matchup = game.name || game.title || game.event || game.description || 'Event';
           startTime = game.start_time || game.startTime || game.date || game.dateTime;
         } else {
-          // Team sports (nfl, wnba)
-          const homeTeam = game.home_team || game.homeTeam || game.home || 'Home';
-          const awayTeam = game.away_team || game.awayTeam || game.away || 'Away';
+          // Other team sports (wnba, etc.)
+          const homeTeam = game.home_team || game.homeTeam?.displayName || game.homeTeam?.name || game.home || 'Home';
+          const awayTeam = game.away_team || game.awayTeam?.displayName || game.awayTeam?.name || game.away || 'Away';
           matchup = `${awayTeam} @ ${homeTeam}`;
           startTime = game.start_time || game.startTime || game.game_time || game.date || game.dateTime;
         }
@@ -150,6 +168,7 @@
         return { 
           matchup, 
           time: formattedTime,
+          additionalInfo,
           debug: debugInfo,
           rawGame: game // Keep for debugging
         };
@@ -216,6 +235,16 @@
               
               gameDiv.appendChild(matchupDiv)
               gameDiv.appendChild(timeDiv)
+              
+              // Add additional info if available
+              if (game.additionalInfo) {
+                const infoDiv = document.createElement('div')
+                infoDiv.className = 'time'
+                infoDiv.style.fontSize = '0.8rem'
+                infoDiv.style.fontStyle = 'italic'
+                infoDiv.textContent = game.additionalInfo
+                gameDiv.appendChild(infoDiv)
+              }
               
               // Add debug info if available
               if (game.debug) {
