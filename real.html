@@ -357,30 +357,165 @@
             gamesContainer.innerHTML = '';
             statsContainer.style.display = 'none';
 
-            try {
-                const response = await fetch('http://api.real.vg/home/mlb/next?cohort=0');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+            // Try multiple approaches to fetch the data
+            const urls = [
+                'https://api.real.vg/home/mlb/next?cohort=0',
+                'https://corsproxy.io/?https://api.real.vg/home/mlb/next?cohort=0',
+                'https://cors-anywhere.herokuapp.com/http://api.real.vg/home/mlb/next?cohort=0'
+            ];
 
-                scheduleData = await response.json();
-                loading.style.display = 'none';
-                
-                if (scheduleData && scheduleData.latestDayContent && scheduleData.latestDayContent.games) {
-                    displayGames(scheduleData.latestDayContent.games);
-                    displayStats(scheduleData.latestDayContent.games);
-                } else {
-                    throw new Error('Invalid data format received');
-                }
+            for (let i = 0; i < urls.length; i++) {
+                try {
+                    console.log(`Trying URL ${i + 1}: ${urls[i]}`);
+                    
+                    const response = await fetch(urls[i], {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
 
-            } catch (err) {
-                loading.style.display = 'none';
-                error.style.display = 'block';
-                document.getElementById('error-message').textContent = 
-                    `Failed to load schedule data: ${err.message}. Please try again later.`;
-                console.error('Error fetching data:', err);
+                    scheduleData = await response.json();
+                    loading.style.display = 'none';
+                    
+                    if (scheduleData && scheduleData.latestDayContent && scheduleData.latestDayContent.games) {
+                        displayGames(scheduleData.latestDayContent.games);
+                        displayStats(scheduleData.latestDayContent.games);
+                        return; // Success, exit the loop
+                    } else {
+                        throw new Error('Invalid data format received');
+                    }
+
+                } catch (err) {
+                    console.log(`URL ${i + 1} failed:`, err.message);
+                    
+                    // If this is the last URL, show the error
+                    if (i === urls.length - 1) {
+                        loading.style.display = 'none';
+                        error.style.display = 'block';
+                        document.getElementById('error-message').innerHTML = 
+                            `<strong>Unable to fetch live data due to CORS restrictions.</strong><br><br>
+                            This is a common issue when accessing APIs from browsers. You can:<br>
+                            • Use a browser extension like "CORS Unblock"<br>
+                            • Run Chrome with --disable-web-security flag<br>
+                            • Or view the demo with sample data below<br><br>
+                            <button onclick="loadSampleData()" style="padding: 10px 20px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer;">Load Sample Data</button>`;
+                        console.error('All URLs failed. Final error:', err);
+                    }
+                }
             }
+        }
+
+        // Sample data function for demonstration
+        function loadSampleData() {
+            const sampleData = {
+                latestDayContent: {
+                    games: [
+                        {
+                            "id": 776866,
+                            "sport": "mlb",
+                            "status": "scheduled",
+                            "dateTime": "2025-08-05T22:40:00.000Z",
+                            "homeTeamId": 134,
+                            "awayTeamId": 137,
+                            "overUnder": "8.5",
+                            "homeMoneyline": 110,
+                            "awayMoneyline": -130,
+                            "commentCount": 59,
+                            "activityCount": 216,
+                            "display": {
+                                "homeScoreDisplay": "49-64",
+                                "awayScoreDisplay": "56-57",
+                                "primary": "10:40 PM"
+                            },
+                            "homeTeam": {
+                                "id": 134,
+                                "key": "PIT",
+                                "name": "Pirates",
+                                "displayName": "Pirates"
+                            },
+                            "awayTeam": {
+                                "id": 137,
+                                "key": "SF",
+                                "name": "Giants",
+                                "displayName": "Giants"
+                            }
+                        },
+                        {
+                            "id": 776862,
+                            "sport": "mlb",
+                            "status": "scheduled",
+                            "dateTime": "2025-08-05T22:40:00.000Z",
+                            "homeTeamId": 146,
+                            "awayTeamId": 117,
+                            "overUnder": "8.5",
+                            "homeMoneyline": -116,
+                            "awayMoneyline": -102,
+                            "commentCount": 33,
+                            "activityCount": 120,
+                            "display": {
+                                "homeScoreDisplay": "55-56",
+                                "awayScoreDisplay": "63-50",
+                                "primary": "10:40 PM"
+                            },
+                            "homeTeam": {
+                                "id": 146,
+                                "key": "MIA",
+                                "name": "Marlins",
+                                "displayName": "Marlins"
+                            },
+                            "awayTeam": {
+                                "id": 117,
+                                "key": "HOU",
+                                "name": "Astros",
+                                "displayName": "Astros"
+                            }
+                        },
+                        {
+                            "id": 776861,
+                            "sport": "mlb",
+                            "status": "scheduled",
+                            "dateTime": "2025-08-05T22:40:00.000Z",
+                            "homeTeamId": 116,
+                            "awayTeamId": 142,
+                            "overUnder": "8",
+                            "homeMoneyline": -164,
+                            "awayMoneyline": 138,
+                            "commentCount": 104,
+                            "activityCount": 238,
+                            "display": {
+                                "homeScoreDisplay": "66-48",
+                                "awayScoreDisplay": "52-60",
+                                "primary": "10:40 PM"
+                            },
+                            "homeTeam": {
+                                "id": 116,
+                                "key": "DET",
+                                "name": "Tigers",
+                                "displayName": "Tigers"
+                            },
+                            "awayTeam": {
+                                "id": 142,
+                                "key": "MIN",
+                                "name": "Twins",
+                                "displayName": "Twins"
+                            }
+                        }
+                    ]
+                }
+            };
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            
+            displayGames(sampleData.latestDayContent.games);
+            displayStats(sampleData.latestDayContent.games);
         }
 
         function displayStats(games) {
