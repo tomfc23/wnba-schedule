@@ -51,11 +51,18 @@
 </head>
 <body>
   <h1>Fetch Next Games for All Sports</h1>
-  <button onclick="fetchAllSports()">Fetch All</button>
+  <div style="margin-bottom: 1rem;">
+    <button onclick="fetchAllSports()">Fetch All</button>
+    <select id="dateFilter" onchange="filterByDate()" style="margin-left: 1rem; padding: 0.5rem; font-size: 1rem;">
+      <option value="">All Dates</option>
+    </select>
+  </div>
   <div id="results"></div>
   <script>
     const sports = ['mlb', 'nfl', 'wnba', 'golf', 'ufc']
     const workerURL = 'https://schedule.tommyek67.workers.dev/' // update if needed
+    
+    let allGamesData = []; // Store all games data for filtering
     
     function formatGameData(data, sport) {
       console.log(`Processing ${sport} data:`, data);
@@ -206,7 +213,9 @@
           time: formattedTime,
           additionalInfo,
           debug: debugInfo,
-          rawGame: game // Keep for debugging
+          rawGame: game, // Keep for debugging
+          sport: sport, // Add sport for filtering
+          gameDate: startTime ? new Date(startTime) : null // Add parsed date for filtering
         };
       });
     }
@@ -234,7 +243,166 @@
       })
       
       const allResults = await Promise.all(fetches)
-      resultsDiv.innerHTML = ''
+      
+      // Store all games data for filtering
+      allGamesData = [];
+      allResults.forEach(result => {
+        if (!result.error) {
+          const games = formatGameData(result.data, result.sport)
+          if (Array.isArray(games)) {
+            games.forEach(game => {
+              game.sport = result.sport; // Ensure sport is set
+              allGamesData.push(game);
+            });
+          }
+        }
+      });
+      
+      // Populate date dropdown
+      populateDateDropdown();
+      
+      // Display results
+      displayResults(allResults);
+    }
+    
+    function populateDateDropdown() {
+      const dateFilter = document.getElementById('dateFilter');
+      const dates = new Set();
+      
+      // Extract unique dates from all games
+      allGamesData.forEach(game => {
+        if (game.gameDate) {
+          const dateStr = game.gameDate.toDateString();
+          dates.add(dateStr);
+        }
+      });
+      
+      // Clear existing options except "All Dates"
+      while (dateFilter.children.length > 1) {
+        dateFilter.removeChild(dateFilter.lastChild);
+      }
+      
+      // Sort dates and add to dropdown
+      const sortedDates = Array.from(dates).sort((a, b) => new Date(a) - new Date(b));
+      sortedDates.forEach(dateStr => {
+        const option = document.createElement('option');
+        option.value = dateStr;
+        option.textContent = new Date(dateStr).toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short', 
+          day: 'numeric'
+        });
+        dateFilter.appendChild(option);
+      });
+    }
+    
+    function filterByDate() {
+      const dateFilter = document.getElementById('dateFilter');
+      const selectedDate = dateFilter.value;
+      
+      if (!selectedDate) {
+        // Show all games - re-fetch and display
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = 'Loading...';
+        fetchAllSports();
+        return;
+      }
+      
+      // Filter games by selected date
+      const filteredGames = allGamesData.filter(game => {
+        if (!game.gameDate) return false;
+        return game.gameDate.toDateString() === selectedDate;
+      });
+      
+      // Group filtered games by sport
+      const gamesBySport = {};
+      filteredGames.forEach(game => {
+        if (!gamesBySport[game.sport]) {
+          gamesBySport[game.sport] = [];
+        }
+        gamesBySport[game.sport].push(game);
+      });
+      
+      // Display filtered results
+      displayFilteredResults(gamesBySport, selectedDate);
+    }
+    
+    function displayFilteredResults(gamesBySport, selectedDate) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      
+      // Add date header
+      const dateHeader = document.createElement('h2');
+      dateHeader.textContent = `Games on ${new Date(selectedDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric'
+      })}`;
+      dateHeader.style.marginTop = '0';
+      resultsDiv.appendChild(dateHeader);
+      
+      if (Object.keys(gamesBySport).length === 0) {
+        const noGamesDiv = document.createElement('div');
+        noGamesDiv.textContent = 'No games found for this date';
+        noGamesDiv.style.fontStyle = 'italic';
+        noGamesDiv.style.color = '#666';
+        resultsDiv.appendChild(noGamesDiv);
+        return;
+      }
+      
+      // Display games grouped by sport
+      Object.keys(gamesBySport).sort().forEach(sport => {
+        const section = document.createElement('div');
+        section.className = 'result';
+        
+        const title = document.createElement('h2');
+        title.textContent = `${sport.toUpperCase()} (${gamesBySport[sport].length})`;
+        section.appendChild(title);
+        
+        gamesBySport[sport].forEach(game => {
+          const gameDiv = document.createElement('div');
+          gameDiv.className = 'game';
+          
+          const matchupDiv = document.createElement('div');
+          matchupDiv.className = 'matchup';
+          matchupDiv.textContent = game.matchup;
+          
+          const timeDiv = document.createElement('div');
+          timeDiv.className = 'time';
+          timeDiv.textContent = game.time;
+          
+          gameDiv.appendChild(matchupDiv);
+          gameDiv.appendChild(timeDiv);
+          
+          // Add additional info if available
+          if (game.additionalInfo) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'time';
+            infoDiv.style.fontSize = '0.8rem';
+            infoDiv.style.fontStyle = 'italic';
+            infoDiv.textContent = game.additionalInfo;
+            gameDiv.appendChild(infoDiv);
+          }
+          
+          // Add debug info if available
+          if (game.debug) {
+            const debugDiv = document.createElement('div');
+            debugDiv.className = 'debug';
+            debugDiv.textContent = game.debug;
+            gameDiv.appendChild(debugDiv);
+          }
+          
+          section.appendChild(gameDiv);
+        });
+        
+        resultsDiv.appendChild(section);
+      });
+    }
+    
+    function displayResults(allResults) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
       
       allResults.forEach(result => {
         const section = document.createElement('div')
