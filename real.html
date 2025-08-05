@@ -337,6 +337,10 @@
                     <span class="stat-number" id="latest-game">--</span>
                     <span class="stat-label">Latest Start</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="current-date">--</span>
+                    <span class="stat-label">Date</span>
+                </div>
             </div>
         </div>
 
@@ -385,9 +389,19 @@
                     loading.style.display = 'none';
                     
                     if (scheduleData && scheduleData.latestDayContent && scheduleData.latestDayContent.games) {
-                        displayGames(scheduleData.latestDayContent.games);
-                        displayStats(scheduleData.latestDayContent.games);
-                        return; // Success, exit the loop
+                        // Check if the day matches current date
+                        const apiDay = scheduleData.latestDayContent.day;
+                        const currentDate = getCurrentDateString();
+                        
+                        console.log(`API Day: ${apiDay}, Current Date: ${currentDate}`);
+                        
+                        if (apiDay === currentDate) {
+                            displayGames(scheduleData.latestDayContent.games);
+                            displayStats(scheduleData.latestDayContent.games);
+                            return; // Success, exit the loop
+                        } else {
+                            throw new Error(`No games found for today (${currentDate}). API has data for ${apiDay}.`);
+                        }
                     } else {
                         throw new Error('Invalid data format received');
                     }
@@ -412,10 +426,21 @@
             }
         }
 
+        // Get current date in YYYY-MM-DD format
+        function getCurrentDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // Sample data function for demonstration
         function loadSampleData() {
+            const currentDate = getCurrentDateString();
             const sampleData = {
                 latestDayContent: {
+                    day: currentDate, // Use current date for demo
                     games: [
                         {
                             "id": 776866,
@@ -514,8 +539,18 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'none';
             
-            displayGames(sampleData.latestDayContent.games);
-            displayStats(sampleData.latestDayContent.games);
+            // Check date match for sample data too
+            const apiDay = sampleData.latestDayContent.day;
+            const currentDate = getCurrentDateString();
+            
+            if (apiDay === currentDate) {
+                displayGames(sampleData.latestDayContent.games);
+                displayStats(sampleData.latestDayContent.games);
+            } else {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').innerHTML = 
+                    `Sample data is for ${apiDay}, but today is ${currentDate}. No games to display.`;
+            }
         }
 
         function displayStats(games) {
@@ -531,9 +566,12 @@
                 return gameTime > latest ? gameTime : latest;
             }, new Date(0));
 
+            const currentDate = getCurrentDateString();
+
             document.getElementById('total-games').textContent = totalGames;
             document.getElementById('avg-over-under').textContent = avgOverUnder.toFixed(1);
             document.getElementById('latest-game').textContent = formatTime(latestTime);
+            document.getElementById('current-date').textContent = currentDate;
 
             statsContainer.style.display = 'block';
         }
