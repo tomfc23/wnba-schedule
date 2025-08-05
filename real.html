@@ -361,68 +361,62 @@
             gamesContainer.innerHTML = '';
             statsContainer.style.display = 'none';
 
-            // Try multiple approaches to fetch the data
-            const urls = [
-                'https://api.real.vg/home/mlb/next?cohort=0',
-                'https://corsproxy.io/?https://api.real.vg/home/mlb/next?cohort=0',
-                'https://cors-anywhere.herokuapp.com/http://api.real.vg/home/mlb/next?cohort=0'
-            ];
+            // Cloudflare Worker URL - replace with your actual worker URL
+            const workerUrl = 'YOUR_WORKER_URL_HERE.workers.dev?cohort=0';
 
-            for (let i = 0; i < urls.length; i++) {
-                try {
-                    console.log(`Trying URL ${i + 1}: ${urls[i]}`);
-                    
-                    const response = await fetch(urls[i], {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                        },
-                        mode: 'cors'
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+            try {
+                console.log(`Fetching data from worker: ${workerUrl}`);
+                
+                const response = await fetch(workerUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
                     }
-
-                    scheduleData = await response.json();
-                    loading.style.display = 'none';
-                    
-                    if (scheduleData && scheduleData.latestDayContent && scheduleData.latestDayContent.games) {
-                        // Check if the day matches current date
-                        const apiDay = scheduleData.latestDayContent.day;
-                        const todayDate = getCurrentDateString();
-                        
-                        console.log(`API Day: ${apiDay}, Current Date: ${todayDate}`);
-                        
-                        if (apiDay === todayDate) {
-                            displayGames(scheduleData.latestDayContent.games);
-                            displayStats(scheduleData.latestDayContent.games);
-                            return; // Success, exit the loop
-                        } else {
-                            throw new Error(`No games found for today (${todayDate}). API has data for ${apiDay}.`);
-                        }
-                    } else {
-                        throw new Error('Invalid data format received');
-                    }
-
-                } catch (err) {
-                    console.log(`URL ${i + 1} failed:`, err.message);
-                    
-                    // If this is the last URL, show the error
-                    if (i === urls.length - 1) {
-                        loading.style.display = 'none';
-                        error.style.display = 'block';
-                        document.getElementById('error-message').innerHTML = 
-                            `<strong>Unable to fetch live data due to CORS restrictions.</strong><br><br>
-                            This is a common issue when accessing APIs from browsers. You can:<br>
-                            • Use a browser extension like "CORS Unblock"<br>
-                            • Run Chrome with --disable-web-security flag<br>
-                            • Or view the demo with sample data below<br><br>
-                            <button onclick="loadSampleData()" style="padding: 10px 20px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer;">Load Sample Data</button>`;
-                        console.error('All URLs failed. Final error:', err);
-                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Worker responded with status: ${response.status}`);
                 }
+
+                scheduleData = await response.json();
+                
+                // Log worker metadata if available
+                if (scheduleData._fetchedAt) {
+                    console.log(`Data fetched at: ${scheduleData._fetchedAt}`);
+                }
+                if (scheduleData._workerVersion) {
+                    console.log(`Worker version: ${scheduleData._workerVersion}`);
+                }
+                
+                loading.style.display = 'none';
+                
+                if (scheduleData && scheduleData.latestDayContent && scheduleData.latestDayContent.games) {
+                    // Check if the day matches current date
+                    const apiDay = scheduleData.latestDayContent.day;
+                    const todayDate = getCurrentDateString();
+                    
+                    console.log(`API Day: ${apiDay}, Current Date: ${todayDate}`);
+                    
+                    if (apiDay === todayDate) {
+                        displayGames(scheduleData.latestDayContent.games);
+                        displayStats(scheduleData.latestDayContent.games);
+                    } else {
+                        throw new Error(`No games found for today (${todayDate}). API has data for ${apiDay}.`);
+                    }
+                } else {
+                    throw new Error('Invalid data format received from worker');
+                }
+
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                document.getElementById('error-message').innerHTML = 
+                    `<strong>Failed to load schedule data:</strong><br>
+                    ${err.message}<br><br>
+                    <small>Make sure to replace YOUR_WORKER_URL_HERE with your actual Cloudflare Worker URL</small><br><br>
+                    <button onclick="loadSampleData()" style="padding: 10px 20px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer;">Load Sample Data</button>`;
+                console.error('Error fetching data from worker:', err);
             }
         }
 
