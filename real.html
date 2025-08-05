@@ -125,8 +125,31 @@
             additionalInfo += (additionalInfo ? ' • ' : '') + `O/U ${game.overUnder}`;
           }
         } else if (sport === 'golf' || sport === 'ufc') {
-          // These might have different structures
-          matchup = game.name || game.title || game.event || game.description || 'Event';
+          // Golf and UFC have different structures
+          if (sport === 'golf') {
+            // Golf tournaments have title in metadata
+            console.log('Golf game metadata:', game.metadata);
+            console.log('Golf game full object:', game);
+            
+            const title = game.metadata?.title || 
+                         game.title || 
+                         game.name || 
+                         game.event || 
+                         game.description || 
+                         'Golf Tournament';
+            const venue = game.metadata?.subtitleFragments?.[0] || '';
+            
+            matchup = title;
+            if (venue) {
+              additionalInfo = venue;
+            }
+            
+            console.log('Golf matchup result:', matchup);
+            console.log('Golf venue result:', venue);
+          } else {
+            // UFC events
+            matchup = game.name || game.title || game.event || game.description || 'UFC Event';
+          }
           startTime = game.start_time || game.startTime || game.date || game.dateTime;
         } else {
           // Other team sports (wnba, etc.)
