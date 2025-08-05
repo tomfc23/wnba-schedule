@@ -3,36 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>All Next Games</title>
+  <title>Upcoming Games</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 2rem;
+      background: #f9f9f9;
     }
+
     button {
       font-size: 1rem;
-      padding: 0.5rem 1rem;
-      margin-bottom: 1rem;
+      padding: 0.6rem 1.2rem;
+      margin-bottom: 1.5rem;
+      cursor: pointer;
     }
-    .result {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #f4f4f4;
-      border-radius: 6px;
+
+    .sport-section {
+      margin-bottom: 2rem;
     }
-    h2 {
-      margin-top: 2rem;
-      font-size: 1.2rem;
+
+    .sport-title {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
       color: #333;
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 0.3rem;
     }
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
+
+    .game {
+      background: white;
+      padding: 0.8rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .team-line {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .start-time {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .error {
+      color: red;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
-  <h1>Fetch Next Games for All Sports</h1>
+  <h1>Upcoming Games</h1>
 
   <button onclick="fetchAllSports()">Fetch All</button>
 
@@ -40,7 +63,7 @@
 
   <script>
     const sports = ['mlb', 'nfl', 'wnba', 'golf', 'ufc']
-    const workerURL = 'https://schedule.tommyek67.workers.dev/' // update if needed
+    const workerURL = 'https://id-fetcher.tommyek67.workers.dev' // update if needed
 
     async function fetchAllSports() {
       const resultsDiv = document.getElementById('results')
@@ -61,20 +84,60 @@
       resultsDiv.innerHTML = ''
       allResults.forEach(result => {
         const section = document.createElement('div')
-        section.className = 'result'
+        section.className = 'sport-section'
 
-        const title = document.createElement('h2')
+        const title = document.createElement('div')
+        title.className = 'sport-title'
         title.textContent = result.sport.toUpperCase()
         section.appendChild(title)
 
-        const content = document.createElement('pre')
-        content.textContent = result.error
-          ? `Error: ${result.error}`
-          : JSON.stringify(result.data, null, 2)
-        section.appendChild(content)
+        if (result.error) {
+          const errorEl = document.createElement('div')
+          errorEl.className = 'error'
+          errorEl.textContent = `Error: ${result.error}`
+          section.appendChild(errorEl)
+        } else if (!result.data?.games?.length) {
+          const emptyEl = document.createElement('div')
+          emptyEl.textContent = 'No games found.'
+          section.appendChild(emptyEl)
+        } else {
+          result.data.games.forEach(game => {
+            const gameEl = document.createElement('div')
+            gameEl.className = 'game'
+
+            const teams = `${game.away?.name || 'TBD'} vs ${game.home?.name || 'TBD'}`
+            const startTime = formatTime(game.start)
+
+            gameEl.innerHTML = `
+              <div class="team-line">${teams}</div>
+              <div class="start-time">${startTime}</div>
+            `
+            section.appendChild(gameEl)
+          })
+        }
 
         resultsDiv.appendChild(section)
       })
+    }
+
+    function formatTime(utcTime) {
+      if (!utcTime) return 'Time: TBD'
+
+      try {
+        const date = new Date(utcTime)
+        const estOptions = {
+          timeZone: 'America/New_York',
+          hour: 'numeric',
+          minute: '2-digit',
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour12: true,
+        }
+        return new Intl.DateTimeFormat('en-US', estOptions).format(date)
+      } catch {
+        return 'Invalid Time'
+      }
     }
   </script>
 </body>
