@@ -29,8 +29,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .breakdown-output { background: #f5f5f5; border-bottom: none; }
 .copy-btn { background: #0066cc; color: #fff; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; font-family: inherit; margin: 16px 20px 0 20px; transition: background-color 0.2s ease; }
 .copy-btn:hover { background: #0052a3; }
-.no-games { text-align: center; padding: 80px 20px; color: #666; }
-.no-games-icon { font-size: 2rem; margin-bottom: 16px; opacity: 0.3; }
 @media (max-width: 768px) {
     .container { padding: 20px 16px; }
     .header { margin-bottom: 40px; }
@@ -80,16 +78,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 <script>
 const API_BASE = 'https://schedule.tommyek67.workers.dev/';
 const SPORTS = ['mlb', 'nfl', 'wnba', 'ufc', 'soccer'];
+const DISPLAY_NAMES = { soccer: 'FC' };
 
 document.getElementById('dateInput').valueAsDate = new Date();
 document.getElementById('fetchBtn').addEventListener('click', fetchAllSchedules);
-document.getElementById('dateInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') fetchAllSchedules();
-});
+document.getElementById('dateInput').addEventListener('keypress', e => { if(e.key==='Enter') fetchAllSchedules(); });
 
 async function fetchAllSchedules() {
-    const dateInput = document.getElementById('dateInput');
-    const selectedDate = dateInput.value;
+    const selectedDate = document.getElementById('dateInput').value;
     if (!selectedDate) { showError('Please select a date'); return; }
 
     showLoading(true); hideError(); hideSchedule();
@@ -97,46 +93,37 @@ async function fetchAllSchedules() {
     try {
         const promises = SPORTS.map(sport => fetchSportSchedule(sport, selectedDate));
         const results = await Promise.allSettled(promises);
-        
+
         const sportsData = {};
         results.forEach((result, index) => {
             const sport = SPORTS[index];
-            if (result.status === 'fulfilled' && result.value) {
-                sportsData[sport] = result.value;
-            } else {
-                console.warn(`Failed to fetch ${sport}:`, result.reason);
-                sportsData[sport] = { content: { games: [] } };
-            }
+            if (result.status==='fulfilled' && result.value) sportsData[sport] = result.value;
+            else { console.warn(`Failed to fetch ${sport}:`, result.reason); sportsData[sport] = { content: { games: [] } }; }
         });
 
         displayConsolidatedSchedule(sportsData, selectedDate);
-    } catch (error) {
-        console.error('Fetch error:', error);
-        showError(`Failed to load schedules: ${error.message}`);
-    } finally {
-        showLoading(false);
-    }
+    } catch(err) {
+        console.error('Fetch error:', err);
+        showError(`Failed to load schedules: ${err.message}`);
+    } finally { showLoading(false); }
 }
 
 async function fetchSportSchedule(sport, date) {
     const url = `${API_BASE}?sport=${sport}&day=${date}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch ${sport}: ${response.status}`);
-    const data = await response.json();
-    console.log(`${sport.toUpperCase()} API DATA:`, data);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch ${sport}: ${res.status}`);
+    const data = await res.json();
     if (data.error) throw new Error(data.error);
+    console.log(`${sport.toUpperCase()} API DATA:`, data);
     return data;
 }
 
 function getGamesFromData(data, sport) {
     if (!data) return [];
-
-    // Generic games arrays
     if (data.content?.games) return data.content.games;
     if (Array.isArray(data.games)) return data.games;
 
-    // Soccer special handling
-    if (sport === 'soccer') {
+    if (sport==='soccer') {
         const gamesArray = data.matches || data.events || data.content?.content?.games || [];
         return gamesArray.map(match => ({
             ...match,
@@ -145,7 +132,6 @@ function getGamesFromData(data, sport) {
             awayTeam: match.awayTeam || { name: match.awayTeamName || 'Away' }
         }));
     }
-
     return [];
 }
 
@@ -158,12 +144,12 @@ function displayConsolidatedSchedule(sportsData, selectedDate) {
     const sportCounts = {};
     let totalGames = 0;
 
-    Object.entries(sportsData).forEach(([sport, data]) => {
+    Object.entries(sportsData).forEach(([sport, data])=>{
         const games = getGamesFromData(data, sport);
-        if (games.length > 0) {
+        if (games.length>0) {
             sportCounts[sport] = games.length;
             totalGames += games.length;
-            games.forEach(game => allGames.push({ sport: sport.toUpperCase(), dateTime: game.dateTime, ...game }));
+            games.forEach(game => allGames.push({ sport: DISPLAY_NAMES[sport]||sport.toUpperCase(), dateTime: game.dateTime, ...game }));
         }
     });
 
@@ -173,18 +159,19 @@ function displayConsolidatedSchedule(sportsData, selectedDate) {
 }
 
 function generateSummary(sportCounts, totalGames, selectedDate, sportsData) {
-    const date = new Date(selectedDate + 'T00:00:00');
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const monthDay = date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    const date = new Date(selectedDate+'T00:00:00');
+    const dayName = date.toLocaleDateString('en-US',{weekday:'long'});
+    const monthDay = date.toLocaleDateString('en-US',{month:'numeric',day:'numeric'});
 
     let summary = `Games on ${dayName} ${monthDay}\n———————————————\n`;
 
-    if (totalGames === 0) summary += 'No games scheduled\n';
+    if(totalGames===0) summary+='No games scheduled\n';
     else {
         const sortedSports = Object.entries(sportCounts).sort(([,a],[,b])=>b-a);
-        sortedSports.forEach(([sport, count])=>{
+        sortedSports.forEach(([sport,count])=>{
             const times = getEarliestGameTimes(sport, sportsData);
-            summary += times.pdt && times.est ? `${count} ${sport.toUpperCase()} (${times.pdt}/${times.est})\n` : `${count} ${sport.toUpperCase()}\n`;
+            const displayName = DISPLAY_NAMES[sport]||sport.toUpperCase();
+            summary += times.pdt && times.est ? `${count} ${displayName} (${times.pdt}/${times.est})\n` : `${count} ${displayName}\n`;
         });
     }
 
@@ -195,79 +182,66 @@ function generateSummary(sportCounts, totalGames, selectedDate, sportsData) {
 
 function getEarliestGameTimes(sport, sportsData) {
     const games = getGamesFromData(sportsData[sport], sport);
-    if (!games.length) return { pdt: 'TBD', est: 'TBD' };
+    if(!games.length) return { pdt:'TBD', est:'TBD' };
 
     let earliestTime = null;
-    games.forEach(game => {
-        const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
-        if (gameDateTime) {
-            const gameTime = new Date(gameDateTime);
-            if (!earliestTime || gameTime < earliestTime) earliestTime = gameTime;
-        }
+    games.forEach(game=>{
+        const dt = game.dateTime || game.kickOffTime || game.startTime;
+        if(dt) { const t=new Date(dt); if(!earliestTime||t<earliestTime) earliestTime=t; }
     });
 
-    if (!earliestTime) return { pdt: 'TBD', est: 'TBD' };
-
-    const pdtTime = earliestTime.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:false, timeZone:'America/Los_Angeles' });
-    const estTime = earliestTime.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:false, timeZone:'America/New_York' });
-    return { pdt: convertTo12Hour(pdtTime), est: convertTo12Hour(estTime) };
+    if(!earliestTime) return { pdt:'TBD', est:'TBD' };
+    const pdt = earliestTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false,timeZone:'America/Los_Angeles'});
+    const est = earliestTime.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false,timeZone:'America/New_York'});
+    return { pdt: convertTo12Hour(pdt), est: convertTo12Hour(est) };
 }
 
 function generateFullBreakdown(allGames) {
-    if (!allGames.length) return 'Full Breakdown: (EST)\nNo games scheduled';
-    let breakdown = 'Full Breakdown: (EST)\n';
-    const gamesByTime = {};
+    if(!allGames.length) return 'Full Breakdown: (EST)\nNo games scheduled';
+    let breakdown='Full Breakdown: (EST)\n';
+    const gamesByTime={};
 
-    allGames.forEach(game => {
-        const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
-        let timeKey = 'TBD';
-        if (gameDateTime) {
-            try { timeKey = new Date(gameDateTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false,timeZone:'America/New_York'}); }
-            catch(e){ timeKey='TBD'; }
-        }
-        if (!gamesByTime[timeKey]) gamesByTime[timeKey] = {};
-        if (!gamesByTime[timeKey][game.sport]) gamesByTime[timeKey][game.sport] = 0;
+    allGames.forEach(game=>{
+        const dt = game.dateTime || game.kickOffTime || game.startTime;
+        let timeKey='TBD';
+        if(dt){ try{timeKey=new Date(dt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false,timeZone:'America/New_York'});} catch(e){timeKey='TBD';} }
+        if(!gamesByTime[timeKey]) gamesByTime[timeKey]={};
+        if(!gamesByTime[timeKey][game.sport]) gamesByTime[timeKey][game.sport]=0;
         gamesByTime[timeKey][game.sport]++;
     });
 
-    const sortedTimes = Object.keys(gamesByTime).sort((a,b)=>{ if(a==='TBD') return 1; if(b==='TBD') return -1; return a.localeCompare(b); });
-    const breakdownItems = [];
+    const sortedTimes=Object.keys(gamesByTime).sort((a,b)=>{ if(a==='TBD') return 1; if(b==='TBD') return -1; return a.localeCompare(b); });
+    const items=[];
     sortedTimes.forEach(time=>{
-        const sports = gamesByTime[time];
+        const sports=gamesByTime[time];
         Object.entries(sports).forEach(([sport,count])=>{
-            const displayTime = convertTo12Hour(time);
-            breakdownItems.push(count>1 ? `${sport} (${count}) - ${displayTime}` : `${sport} - ${displayTime}`);
+            const displayTime=convertTo12Hour(time);
+            items.push(count>1 ? `${sport} (${count}) - ${displayTime}` : `${sport} - ${displayTime}`);
         });
     });
 
-    breakdown += breakdownItems.join('\n');
+    breakdown += items.join('\n');
     return breakdown;
 }
 
 function convertTo12Hour(time24) {
-    if (time24==='TBD') return 'TBD';
-    try {
-        const [hours,minutes] = time24.split(':');
-        const hour=parseInt(hours);
-        const ampm = hour>=12?'PM':'AM';
-        const displayHour = hour===0?12:(hour>12?hour-12:hour);
-        return `${displayHour}:${minutes}${ampm}`;
-    } catch(e){ return time24; }
+    if(time24==='TBD') return 'TBD';
+    try{
+        const [h,m]=time24.split(':'); const hour=parseInt(h); const ampm=hour>=12?'PM':'AM'; const dh=hour===0?12:(hour>12?hour-12:hour);
+        return `${dh}:${m}${ampm}`;
+    }catch(e){ return time24; }
 }
 
-function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    const text = element.textContent;
-    navigator.clipboard.writeText(text).then(()=>{
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = 'Copied';
-        setTimeout(()=>{btn.textContent=originalText;},1500);
+function copyToClipboard(id){
+    const txt=document.getElementById(id).textContent;
+    navigator.clipboard.writeText(txt).then(()=>{
+        const btn=event.target; const orig=btn.textContent;
+        btn.textContent='Copied'; setTimeout(()=>{btn.textContent=orig;},1500);
     }).catch(err=>console.error('Failed to copy:',err));
 }
 
-function showLoading(show){document.getElementById('loading').style.display = show?'block':'none';}
-function showError(message){const e=document.getElementById('error'); e.textContent=message; e.style.display='block';}
+function showLoading(show){document.getElementById('loading').style.display=show?'block':'none';}
+function showError(msg){const e=document.getElementById('error'); e.textContent=msg; e.style.display='block';}
 function hideError(){document.getElementById('error').style.display='none';}
 function hideSchedule(){document.getElementById('scheduleContainer').style.display='none';}
 
