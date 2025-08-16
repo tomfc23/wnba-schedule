@@ -1,604 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Sports Schedule</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #ffffff;
-            min-height: 100vh;
-            color: #000000;
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 60px;
-            border-bottom: 1px solid #e5e5e5;
-            padding-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 400;
-            margin-bottom: 8px;
-            color: #000000;
-            letter-spacing: -0.02em;
-        }
-
-        .header p {
-            font-size: 0.95rem;
-            color: #666666;
-            font-weight: 300;
-        }
-
-        .controls {
-            background: #fafafa;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            padding: 24px;
-            margin-bottom: 40px;
-        }
-
-        .control-group {
-            display: flex;
-            gap: 20px;
-            align-items: end;
-            flex-wrap: wrap;
-        }
-
-        .control-item {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .control-item label {
-            font-weight: 400;
-            color: #333333;
-            font-size: 0.9rem;
-        }
-
-        .date-input {
-            padding: 8px 12px;
-            border: 1px solid #cccccc;
-            border-radius: 3px;
-            font-size: 0.95rem;
-            background: white;
-            color: #000000;
-            font-family: inherit;
-        }
-
-        .date-input:focus {
-            outline: none;
-            border-color: #0066cc;
-        }
-
-        .fetch-btn {
-            padding: 9px 20px;
-            background: #000000;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-weight: 400;
-            font-size: 0.95rem;
-            font-family: inherit;
-            transition: background-color 0.2s ease;
-        }
-
-        .fetch-btn:hover {
-            background: #333333;
-        }
-
-        .fetch-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666666;
-            font-size: 0.95rem;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #e5e5e5;
-            border-radius: 50%;
-            border-top-color: #0066cc;
-            animation: spin 1s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #f8f8f8;
-            border: 1px solid #cccccc;
-            color: #000000;
-            padding: 16px;
-            border-radius: 3px;
-            margin-bottom: 24px;
-            font-size: 0.9rem;
-        }
-
-        .schedule-container {
-            background: #ffffff;
-            border: 1px solid #e5e5e5;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .schedule-output, .breakdown-output {
-            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
-            background: #fafafa;
-            color: #000000;
-            padding: 20px;
-            white-space: pre-wrap;
-            font-size: 0.85rem;
-            line-height: 1.6;
-            overflow-x: auto;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .breakdown-output {
-            background: #f5f5f5;
-            border-bottom: none;
-        }
-
-        .copy-btn {
-            background: #0066cc;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-family: inherit;
-            margin: 16px 20px 0 20px;
-            transition: background-color 0.2s ease;
-        }
-
-        .copy-btn:hover {
-            background: #0052a3;
-        }
-
-        .no-games {
-            text-align: center;
-            padding: 80px 20px;
-            color: #666666;
-        }
-
-        .no-games-icon {
-            font-size: 2rem;
-            margin-bottom: 16px;
-            opacity: 0.3;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px 16px;
-            }
-            
-            .header {
-                margin-bottom: 40px;
-            }
-            
-            .header h1 {
-                font-size: 1.75rem;
-            }
-            
-            .control-group {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 16px;
-            }
-            
-            .control-item {
-                align-items: stretch;
-            }
-            
-            .schedule-output, .breakdown-output {
-                font-size: 0.8rem;
-                padding: 16px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real Sports Schedule</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #fff; min-height: 100vh; color: #000; line-height: 1.5; }
+.container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+.header { text-align: center; margin-bottom: 60px; border-bottom: 1px solid #e5e5e5; padding-bottom: 30px; }
+.header h1 { font-size: 2rem; font-weight: 400; margin-bottom: 8px; color: #000; letter-spacing: -0.02em; }
+.header p { font-size: 0.95rem; color: #666; font-weight: 300; }
+.controls { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 4px; padding: 24px; margin-bottom: 40px; }
+.control-group { display: flex; gap: 20px; align-items: end; flex-wrap: wrap; }
+.control-item { display: flex; flex-direction: column; gap: 6px; }
+.control-item label { font-weight: 400; color: #333; font-size: 0.9rem; }
+.date-input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.95rem; background: #fff; color: #000; font-family: inherit; }
+.date-input:focus { outline: none; border-color: #0066cc; }
+.fetch-btn { padding: 9px 20px; background: #000; color: #fff; border: none; border-radius: 3px; cursor: pointer; font-weight: 400; font-size: 0.95rem; font-family: inherit; transition: background-color 0.2s ease; }
+.fetch-btn:hover { background: #333; }
+.fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.loading { text-align: center; padding: 60px 20px; color: #666; font-size: 0.95rem; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #e5e5e5; border-radius: 50%; border-top-color: #0066cc; animation: spin 1s linear infinite; margin-bottom: 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { background: #f8f8f8; border: 1px solid #ccc; color: #000; padding: 16px; border-radius: 3px; margin-bottom: 24px; font-size: 0.9rem; }
+.schedule-container { background: #fff; border: 1px solid #e5e5e5; border-radius: 4px; overflow: hidden; display: none; }
+.schedule-output, .breakdown-output { font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace; background: #fafafa; color: #000; padding: 20px; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.6; overflow-x: auto; border-bottom: 1px solid #e5e5e5; }
+.breakdown-output { background: #f5f5f5; border-bottom: none; }
+.copy-btn { background: #0066cc; color: #fff; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 0.8rem; font-family: inherit; margin: 16px 20px 0 20px; transition: background-color 0.2s ease; }
+.copy-btn:hover { background: #0052a3; }
+.no-games { text-align: center; padding: 80px 20px; color: #666; }
+.no-games-icon { font-size: 2rem; margin-bottom: 16px; opacity: 0.3; }
+@media (max-width: 768px) {
+    .container { padding: 20px 16px; }
+    .header { margin-bottom: 40px; }
+    .header h1 { font-size: 1.75rem; }
+    .control-group { flex-direction: column; align-items: stretch; gap: 16px; }
+    .control-item { align-items: stretch; }
+    .schedule-output, .breakdown-output { font-size: 0.8rem; padding: 16px; }
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Real Sports Schedule</h1>
-            <p>‼️DOES NOT YET SUPPORT GOLF‼️</p><br>
-            <p>dm @tomfc for problems</p>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>Real Sports Schedule</h1>
+        <p>‼️DOES NOT YET SUPPORT GOLF‼️</p><br>
+        <p>dm @tomfc for problems</p>
+    </div>
 
-        <div class="controls">
-            <div class="control-group">
-                <div class="control-item">
-                    <label for="dateInput">Date</label>
-                    <input type="date" id="dateInput" class="date-input">
-                </div>
-                
-                <div class="control-item">
-                    <button id="fetchBtn" class="fetch-btn">Get Schedule</button>
-                </div>
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-item">
+                <label for="dateInput">Date</label>
+                <input type="date" id="dateInput" class="date-input">
             </div>
-        </div>
-
-        <div id="loading" class="loading" style="display: none;">
-            <div class="spinner"></div>
-            <div>Loading schedules...</div>
-        </div>
-
-        <div id="error" class="error" style="display: none;"></div>
-
-        <div id="scheduleContainer" class="schedule-container" style="display: none;">
-            <button class="copy-btn" onclick="copyToClipboard('summaryOutput')">Copy Summary</button>
-            <div id="summaryOutput" class="schedule-output"></div>
-            
-            <button class="copy-btn" onclick="copyToClipboard('breakdownOutput')">Copy Breakdown</button>
-            <div id="breakdownOutput" class="breakdown-output"></div>
+            <div class="control-item">
+                <button id="fetchBtn" class="fetch-btn">Get Schedule</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        const API_BASE = 'https://schedule.tommyek67.workers.dev/';
-        const SPORTS = ['mlb', 'nfl', 'wnba', 'ufc', 'soccer'];
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <div>Loading schedules...</div>
+    </div>
 
-        // Set default date to today
-        document.getElementById('dateInput').valueAsDate = new Date();
+    <div id="error" class="error" style="display: none;"></div>
 
-        // Fetch button handler
-        document.getElementById('fetchBtn').addEventListener('click', fetchAllSchedules);
+    <div id="scheduleContainer" class="schedule-container">
+        <button class="copy-btn" onclick="copyToClipboard('summaryOutput')">Copy Summary</button>
+        <div id="summaryOutput" class="schedule-output"></div>
+        
+        <button class="copy-btn" onclick="copyToClipboard('breakdownOutput')">Copy Breakdown</button>
+        <div id="breakdownOutput" class="breakdown-output"></div>
+    </div>
+</div>
 
-        // Enter key handler for date input
-        document.getElementById('dateInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') fetchAllSchedules();
+<script>
+const API_BASE = 'https://schedule.tommyek67.workers.dev/';
+const SPORTS = ['mlb', 'nfl', 'wnba', 'ufc', 'soccer'];
+
+document.getElementById('dateInput').valueAsDate = new Date();
+document.getElementById('fetchBtn').addEventListener('click', fetchAllSchedules);
+document.getElementById('dateInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') fetchAllSchedules();
+});
+
+async function fetchAllSchedules() {
+    const dateInput = document.getElementById('dateInput');
+    const selectedDate = dateInput.value;
+    if (!selectedDate) { showError('Please select a date'); return; }
+
+    showLoading(true); hideError(); hideSchedule();
+
+    try {
+        const promises = SPORTS.map(sport => fetchSportSchedule(sport, selectedDate));
+        const results = await Promise.allSettled(promises);
+        
+        const sportsData = {};
+        results.forEach((result, index) => {
+            const sport = SPORTS[index];
+            if (result.status === 'fulfilled' && result.value) {
+                sportsData[sport] = result.value;
+            } else {
+                console.warn(`Failed to fetch ${sport}:`, result.reason);
+                sportsData[sport] = { content: { games: [] } };
+            }
         });
 
-        async function fetchAllSchedules() {
-            const dateInput = document.getElementById('dateInput');
-            const selectedDate = dateInput.value;
-            
-            if (!selectedDate) {
-                showError('Please select a date');
-                return;
-            }
+        displayConsolidatedSchedule(sportsData, selectedDate);
+    } catch (error) {
+        console.error('Fetch error:', error);
+        showError(`Failed to load schedules: ${error.message}`);
+    } finally {
+        showLoading(false);
+    }
+}
 
-            showLoading(true);
-            hideError();
-            hideSchedule();
+async function fetchSportSchedule(sport, date) {
+    const url = `${API_BASE}?sport=${sport}&day=${date}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ${sport}: ${response.status}`);
+    const data = await response.json();
+    console.log(`${sport.toUpperCase()} API DATA:`, data);
+    if (data.error) throw new Error(data.error);
+    return data;
+}
 
-            try {
-                const promises = SPORTS.map(sport => fetchSportSchedule(sport, selectedDate));
-                const results = await Promise.allSettled(promises);
-                
-                const sportsData = {};
-                results.forEach((result, index) => {
-                    const sport = SPORTS[index];
-                    if (result.status === 'fulfilled' && result.value) {
-                        sportsData[sport] = result.value;
-                    } else {
-                        console.warn(`Failed to fetch ${sport}:`, result.reason);
-                        sportsData[sport] = { content: { games: [] } };
-                    }
-                });
+function getGamesFromData(data, sport) {
+    if (!data) return [];
 
-                displayConsolidatedSchedule(sportsData, selectedDate);
-            } catch (error) {
-                console.error('Fetch error:', error);
-                showError(`Failed to load schedules: ${error.message}`);
-            } finally {
-                showLoading(false);
-            }
+    // Generic games arrays
+    if (data.content?.games) return data.content.games;
+    if (Array.isArray(data.games)) return data.games;
+
+    // Soccer special handling
+    if (sport === 'soccer') {
+        const gamesArray = data.matches || data.events || data.content?.content?.games || [];
+        return gamesArray.map(match => ({
+            ...match,
+            dateTime: match.dateTime || match.kickOffTime || match.start_time || match.startTime,
+            homeTeam: match.homeTeam || { name: match.homeTeamName || 'Home' },
+            awayTeam: match.awayTeam || { name: match.awayTeamName || 'Away' }
+        }));
+    }
+
+    return [];
+}
+
+function displayConsolidatedSchedule(sportsData, selectedDate) {
+    const container = document.getElementById('scheduleContainer');
+    const summaryOutput = document.getElementById('summaryOutput');
+    const breakdownOutput = document.getElementById('breakdownOutput');
+
+    const allGames = [];
+    const sportCounts = {};
+    let totalGames = 0;
+
+    Object.entries(sportsData).forEach(([sport, data]) => {
+        const games = getGamesFromData(data, sport);
+        if (games.length > 0) {
+            sportCounts[sport] = games.length;
+            totalGames += games.length;
+            games.forEach(game => allGames.push({ sport: sport.toUpperCase(), dateTime: game.dateTime, ...game }));
         }
+    });
 
-        async function fetchSportSchedule(sport, date) {
-            const url = `${API_BASE}?sport=${sport}&day=${date}`;
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`Failed to fetch ${sport}: ${response.status}`);
-            }
+    summaryOutput.textContent = generateSummary(sportCounts, totalGames, selectedDate, sportsData);
+    breakdownOutput.textContent = generateFullBreakdown(allGames);
+    container.style.display = 'block';
+}
 
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(data.error);
-            }
+function generateSummary(sportCounts, totalGames, selectedDate, sportsData) {
+    const date = new Date(selectedDate + 'T00:00:00');
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+    const monthDay = date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
 
-            return data;
+    let summary = `Games on ${dayName} ${monthDay}\n———————————————\n`;
+
+    if (totalGames === 0) summary += 'No games scheduled\n';
+    else {
+        const sortedSports = Object.entries(sportCounts).sort(([,a],[,b])=>b-a);
+        sortedSports.forEach(([sport, count])=>{
+            const times = getEarliestGameTimes(sport, sportsData);
+            summary += times.pdt && times.est ? `${count} ${sport.toUpperCase()} (${times.pdt}/${times.est})\n` : `${count} ${sport.toUpperCase()}\n`;
+        });
+    }
+
+    summary += '———————————————\n';
+    summary += `${totalGames} total games\n———————————————`;
+    return summary;
+}
+
+function getEarliestGameTimes(sport, sportsData) {
+    const games = getGamesFromData(sportsData[sport], sport);
+    if (!games.length) return { pdt: 'TBD', est: 'TBD' };
+
+    let earliestTime = null;
+    games.forEach(game => {
+        const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
+        if (gameDateTime) {
+            const gameTime = new Date(gameDateTime);
+            if (!earliestTime || gameTime < earliestTime) earliestTime = gameTime;
         }
+    });
 
-        function displayConsolidatedSchedule(sportsData, selectedDate) {
-            const container = document.getElementById('scheduleContainer');
-            const summaryOutput = document.getElementById('summaryOutput');
-            const breakdownOutput = document.getElementById('breakdownOutput');
+    if (!earliestTime) return { pdt: 'TBD', est: 'TBD' };
 
-            // Process all games and organize by time
-            const allGames = [];
-            const sportCounts = {};
-            let totalGames = 0;
+    const pdtTime = earliestTime.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:false, timeZone:'America/Los_Angeles' });
+    const estTime = earliestTime.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:false, timeZone:'America/New_York' });
+    return { pdt: convertTo12Hour(pdtTime), est: convertTo12Hour(estTime) };
+}
 
-            Object.entries(sportsData).forEach(([sport, data]) => {
-                const games = getGamesFromData(data, sport);
-                if (games.length > 0) {
-                    sportCounts[sport] = games.length;
-                    totalGames += games.length;
-                    
-                    games.forEach(game => {
-                        allGames.push({
-                            sport: sport.toUpperCase(),
-                            dateTime: game.dateTime,
-                            ...game
-                        });
-                    });
-                }
-            });
+function generateFullBreakdown(allGames) {
+    if (!allGames.length) return 'Full Breakdown: (EST)\nNo games scheduled';
+    let breakdown = 'Full Breakdown: (EST)\n';
+    const gamesByTime = {};
 
-            // Generate summary
-            const summary = generateSummary(sportCounts, totalGames, selectedDate, sportsData);
-            summaryOutput.textContent = summary;
-
-            // Generate full breakdown
-            const breakdown = generateFullBreakdown(allGames);
-            breakdownOutput.textContent = breakdown;
-
-            container.style.display = 'block';
+    allGames.forEach(game => {
+        const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
+        let timeKey = 'TBD';
+        if (gameDateTime) {
+            try { timeKey = new Date(gameDateTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false,timeZone:'America/New_York'}); }
+            catch(e){ timeKey='TBD'; }
         }
+        if (!gamesByTime[timeKey]) gamesByTime[timeKey] = {};
+        if (!gamesByTime[timeKey][game.sport]) gamesByTime[timeKey][game.sport] = 0;
+        gamesByTime[timeKey][game.sport]++;
+    });
 
-        function getGamesFromData(data, sport) {
-            // Handle different response structures
-            if (!data) return [];
-            
-            // Standard structure: data.content.games
-            if (data.content && Array.isArray(data.content.games)) {
-                return data.content.games;
-            }
-            
-            // Direct games array
-            if (Array.isArray(data.games)) {
-                return data.games;
-            }
-            
-            // Soccer specific: might be nested differently
-            if (sport === 'soccer') {
-                // Check for nested structure in soccer data
-                if (data.content && data.content.content && Array.isArray(data.content.content.games)) {
-                    return data.content.content.games;
-                }
-                
-                // Check for different soccer API structure
-                if (data.matches && Array.isArray(data.matches)) {
-                    return data.matches.map(match => ({
-                        ...match,
-                        dateTime: match.dateTime || match.kickOffTime || match.startTime,
-                        homeTeam: match.homeTeam || { name: match.homeTeamName || 'Home' },
-                        awayTeam: match.awayTeam || { name: match.awayTeamName || 'Away' }
-                    }));
-                }
-            }
-            
-            return [];
-        }
+    const sortedTimes = Object.keys(gamesByTime).sort((a,b)=>{ if(a==='TBD') return 1; if(b==='TBD') return -1; return a.localeCompare(b); });
+    const breakdownItems = [];
+    sortedTimes.forEach(time=>{
+        const sports = gamesByTime[time];
+        Object.entries(sports).forEach(([sport,count])=>{
+            const displayTime = convertTo12Hour(time);
+            breakdownItems.push(count>1 ? `${sport} (${count}) - ${displayTime}` : `${sport} - ${displayTime}`);
+        });
+    });
 
-        function generateSummary(sportCounts, totalGames, selectedDate, sportsData) {
-            const date = new Date(selectedDate + 'T00:00:00');
-            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-            const monthDay = date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-            
-            let summary = `Games on ${dayName} ${monthDay}\n`;
-            summary += '———————————————\n';
+    breakdown += breakdownItems.join('\n');
+    return breakdown;
+}
 
-            if (totalGames === 0) {
-                summary += 'No games scheduled\n';
-            } else {
-                // Sort sports by count (descending)
-                const sortedSports = Object.entries(sportCounts)
-                    .sort(([,a], [,b]) => b - a);
+function convertTo12Hour(time24) {
+    if (time24==='TBD') return 'TBD';
+    try {
+        const [hours,minutes] = time24.split(':');
+        const hour=parseInt(hours);
+        const ampm = hour>=12?'PM':'AM';
+        const displayHour = hour===0?12:(hour>12?hour-12:hour);
+        return `${displayHour}:${minutes}${ampm}`;
+    } catch(e){ return time24; }
+}
 
-                sortedSports.forEach(([sport, count]) => {
-                    const times = getEarliestGameTimes(sport, sportsData);
-                    if (times.pdt && times.est) {
-                        summary += `${count} ${sport.toUpperCase()} (${times.pdt}/${times.est})\n`;
-                    } else {
-                        summary += `${count} ${sport.toUpperCase()}\n`;
-                    }
-                });
-            }
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = element.textContent;
+    navigator.clipboard.writeText(text).then(()=>{
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(()=>{btn.textContent=originalText;},1500);
+    }).catch(err=>console.error('Failed to copy:',err));
+}
 
-            summary += '———————————————\n';
-            summary += `${totalGames} total games\n`;
-            summary += '———————————————';
+function showLoading(show){document.getElementById('loading').style.display = show?'block':'none';}
+function showError(message){const e=document.getElementById('error'); e.textContent=message; e.style.display='block';}
+function hideError(){document.getElementById('error').style.display='none';}
+function hideSchedule(){document.getElementById('scheduleContainer').style.display='none';}
 
-            return summary;
-        }
-
-        function getEarliestGameTimes(sport, sportsData) {
-            const games = getGamesFromData(sportsData[sport], sport);
-            
-            if (games.length === 0) {
-                return { pdt: 'TBD', est: 'TBD' };
-            }
-
-            // Find the earliest game time
-            let earliestTime = null;
-            
-            games.forEach(game => {
-                const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
-                if (gameDateTime) {
-                    try {
-                        const gameTime = new Date(gameDateTime);
-                        if (!earliestTime || gameTime < earliestTime) {
-                            earliestTime = gameTime;
-                        }
-                    } catch (e) {
-                        console.warn('Invalid date format:', gameDateTime);
-                    }
-                }
-            });
-
-            if (!earliestTime) {
-                return { pdt: 'TBD', est: 'TBD' };
-            }
-
-            // Convert to PDT and EST
-            const pdtTime = earliestTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: false,
-                timeZone: 'America/Los_Angeles'
-            });
-
-            const estTime = earliestTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: false,
-                timeZone: 'America/New_York'
-            });
-
-            return {
-                pdt: convertTo12Hour(pdtTime),
-                est: convertTo12Hour(estTime)
-            };
-        }
-
-        function generateFullBreakdown(allGames) {
-            if (allGames.length === 0) {
-                return 'Full Breakdown: (EST)\nNo games scheduled';
-            }
-
-            let breakdown = 'Full Breakdown: (EST)\n';
-
-            // Group games by time and sort
-            const gamesByTime = {};
-            
-            allGames.forEach(game => {
-                let timeKey;
-                const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
-                
-                if (gameDateTime) {
-                    try {
-                        const date = new Date(gameDateTime);
-                        timeKey = date.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: false,
-                            timeZone: 'America/New_York'
-                        });
-                    } catch (e) {
-                        timeKey = 'TBD';
-                    }
-                } else {
-                    timeKey = 'TBD';
-                }
-
-                if (!gamesByTime[timeKey]) {
-                    gamesByTime[timeKey] = {};
-                }
-                
-                if (!gamesByTime[timeKey][game.sport]) {
-                    gamesByTime[timeKey][game.sport] = 0;
-                }
-                gamesByTime[timeKey][game.sport]++;
-            });
-
-            // Sort times
-            const sortedTimes = Object.keys(gamesByTime).sort((a, b) => {
-                if (a === 'TBD') return 1;
-                if (b === 'TBD') return -1;
-                return a.localeCompare(b);
-            });
-
-            const breakdownItems = [];
-            sortedTimes.forEach(time => {
-                const sports = gamesByTime[time];
-                Object.entries(sports).forEach(([sport, count]) => {
-                    const displayTime = convertTo12Hour(time);
-                    if (count > 1) {
-                        breakdownItems.push(`${sport} (${count}) - ${displayTime}`);
-                    } else {
-                        breakdownItems.push(`${sport} - ${displayTime}`);
-                    }
-                });
-            });
-
-            breakdown += breakdownItems.join('\n');
-
-            return breakdown;
-        }
-
-        function convertTo12Hour(time24) {
-            if (time24 === 'TBD') return 'TBD';
-            
-            try {
-                const [hours, minutes] = time24.split(':');
-                const hour = parseInt(hours);
-                const ampm = hour >= 12 ? 'PM' : 'AM';
-                const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                return `${displayHour}:${minutes}${ampm}`;
-            } catch (e) {
-                return time24;
-            }
-        }
-
-        function copyToClipboard(elementId) {
-            const element = document.getElementById(elementId);
-            const text = element.textContent;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                // Visual feedback
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 1500);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-            });
-        }
-
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
-        }
-
-        function hideSchedule() {
-            document.getElementById('scheduleContainer').style.display = 'none';
-        }
-
-        // Load today's schedules by default
-        fetchAllSchedules();
-    </script>
+fetchAllSchedules();
+</script>
 </body>
 </html>
