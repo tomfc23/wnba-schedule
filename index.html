@@ -357,7 +357,7 @@
             });
 
             // Generate summary
-            const summary = generateSummary(sportCounts, totalGames, selectedDate);
+            const summary = generateSummary(sportCounts, totalGames, selectedDate, sportsData);
             summaryOutput.textContent = summary;
 
             // Generate full breakdown
@@ -367,7 +367,7 @@
             container.style.display = 'block';
         }
 
-        function generateSummary(sportCounts, totalGames, selectedDate) {
+        function generateSummary(sportCounts, totalGames, selectedDate, sportsData) {
             const date = new Date(selectedDate + 'T00:00:00');
             const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
             const monthDay = date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
@@ -383,7 +383,7 @@
                     .sort(([,a], [,b]) => b - a);
 
                 sortedSports.forEach(([sport, count]) => {
-                    const times = getEarliestGameTimes(sport, selectedDate);
+                    const times = getEarliestGameTimes(sport, sportsData);
                     if (times.pdt && times.est) {
                         summary += `${count} ${sport.toUpperCase()} (${times.pdt}/${times.est})\n`;
                     } else {
@@ -399,17 +399,52 @@
             return summary;
         }
 
-        function getEarliestGameTimes(sport, selectedDate) {
-            // This is a simplified version - in a real implementation, 
-            // you'd get the actual earliest game time from the API data
-            const mockTimes = {
-                mlb: { pdt: '3:40', est: '6:40' },
-                nfl: { pdt: '10:00', est: '1:00' },
-                wnba: { pdt: '4:00', est: '7:00' },
-                ufc: { pdt: '5:00', est: '8:00' }
-            };
+        function getEarliestGameTimes(sport, sportsData) {
+            const games = sportsData[sport]?.content?.games || [];
+            
+            if (games.length === 0) {
+                return { pdt: 'TBD', est: 'TBD' };
+            }
 
-            return mockTimes[sport] || { pdt: 'TBD', est: 'TBD' };
+            // Find the earliest game time
+            let earliestTime = null;
+            
+            games.forEach(game => {
+                if (game.dateTime) {
+                    try {
+                        const gameTime = new Date(game.dateTime);
+                        if (!earliestTime || gameTime < earliestTime) {
+                            earliestTime = gameTime;
+                        }
+                    } catch (e) {
+                        console.warn('Invalid date format:', game.dateTime);
+                    }
+                }
+            });
+
+            if (!earliestTime) {
+                return { pdt: 'TBD', est: 'TBD' };
+            }
+
+            // Convert to PDT and EST
+            const pdtTime = earliestTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'America/Los_Angeles'
+            });
+
+            const estTime = earliestTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: false,
+                timeZone: 'America/New_York'
+            });
+
+            return {
+                pdt: convertTo12Hour(pdtTime),
+                est: convertTo12Hour(estTime)
+            };
         }
 
         function generateFullBreakdown(allGames) {
