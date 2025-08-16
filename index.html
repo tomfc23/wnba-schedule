@@ -341,7 +341,7 @@
             let totalGames = 0;
 
             Object.entries(sportsData).forEach(([sport, data]) => {
-                const games = data.content?.games || [];
+                const games = getGamesFromData(data, sport);
                 if (games.length > 0) {
                     sportCounts[sport] = games.length;
                     totalGames += games.length;
@@ -365,6 +365,41 @@
             breakdownOutput.textContent = breakdown;
 
             container.style.display = 'block';
+        }
+
+        function getGamesFromData(data, sport) {
+            // Handle different response structures
+            if (!data) return [];
+            
+            // Standard structure: data.content.games
+            if (data.content && Array.isArray(data.content.games)) {
+                return data.content.games;
+            }
+            
+            // Direct games array
+            if (Array.isArray(data.games)) {
+                return data.games;
+            }
+            
+            // Soccer specific: might be nested differently
+            if (sport === 'soccer') {
+                // Check for nested structure in soccer data
+                if (data.content && data.content.content && Array.isArray(data.content.content.games)) {
+                    return data.content.content.games;
+                }
+                
+                // Check for different soccer API structure
+                if (data.matches && Array.isArray(data.matches)) {
+                    return data.matches.map(match => ({
+                        ...match,
+                        dateTime: match.dateTime || match.kickOffTime || match.startTime,
+                        homeTeam: match.homeTeam || { name: match.homeTeamName || 'Home' },
+                        awayTeam: match.awayTeam || { name: match.awayTeamName || 'Away' }
+                    }));
+                }
+            }
+            
+            return [];
         }
 
         function generateSummary(sportCounts, totalGames, selectedDate, sportsData) {
@@ -400,7 +435,7 @@
         }
 
         function getEarliestGameTimes(sport, sportsData) {
-            const games = sportsData[sport]?.content?.games || [];
+            const games = getGamesFromData(sportsData[sport], sport);
             
             if (games.length === 0) {
                 return { pdt: 'TBD', est: 'TBD' };
@@ -410,14 +445,15 @@
             let earliestTime = null;
             
             games.forEach(game => {
-                if (game.dateTime) {
+                const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
+                if (gameDateTime) {
                     try {
-                        const gameTime = new Date(game.dateTime);
+                        const gameTime = new Date(gameDateTime);
                         if (!earliestTime || gameTime < earliestTime) {
                             earliestTime = gameTime;
                         }
                     } catch (e) {
-                        console.warn('Invalid date format:', game.dateTime);
+                        console.warn('Invalid date format:', gameDateTime);
                     }
                 }
             });
@@ -459,9 +495,11 @@
             
             allGames.forEach(game => {
                 let timeKey;
-                if (game.dateTime) {
+                const gameDateTime = game.dateTime || game.kickOffTime || game.startTime;
+                
+                if (gameDateTime) {
                     try {
-                        const date = new Date(game.dateTime);
+                        const date = new Date(gameDateTime);
                         timeKey = date.toLocaleTimeString('en-US', {
                             hour: 'numeric',
                             minute: '2-digit',
@@ -518,7 +556,7 @@
                 const hour = parseInt(hours);
                 const ampm = hour >= 12 ? 'PM' : 'AM';
                 const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                return `${displayHour}:${minutes}`;
+                return `${displayHour}:${minutes}${ampm}`;
             } catch (e) {
                 return time24;
             }
